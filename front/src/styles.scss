@@ -1,9 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+$font-family-base: 'Inter', sans-serif;
+
 $theme-colors: (
     "primary": #203864,
     "secondary": #405879,
     "grey": #2B2B2B,
     "white": #E5E5E5,
-    "blue": #C2A878
+    "golden": #D4AF37
 );
 
 @import 'bootstrap/scss/bootstrap';
