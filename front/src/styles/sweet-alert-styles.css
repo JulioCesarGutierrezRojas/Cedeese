@@ -8,15 +8,15 @@
 }
 
 .colored-toast .swal2-title {
-    color: var(secondary);
+    color: var(--secondary);
 }
 
 .colored-toast .swal2-close {
-    color: var(secondary);
+    color: var(--secondary);
 }
 
 .colored-toast .swal2-html-container {
-    color: var(secondary);
+    color: var(--secondary);
 }
 
 .timer-popup .swal2-icon {
