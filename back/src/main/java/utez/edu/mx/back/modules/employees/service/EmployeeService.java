@@ -14,8 +14,4 @@ import java.util.Optional;
 public class EmployeeService {
     private final IEmployeeRepository repository;
 
-    @Transactional(readOnly = true)
-    public Optional<Employee> findByUsername(String username) {
-        return repository.findByUsername(username);
-    }
 }
