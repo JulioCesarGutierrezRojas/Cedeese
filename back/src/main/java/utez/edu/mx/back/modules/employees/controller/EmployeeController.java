@@ -1,9 +1,10 @@
 package utez.edu.mx.back.modules.employees.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import utez.edu.mx.back.kernel.ApiResponse;
-import utez.edu.mx.back.modules.employees.model.Employee;
+import utez.edu.mx.back.modules.employees.dto.EmployeesDto;
 import utez.edu.mx.back.modules.employees.service.EmployeeService;
 
 import java.util.List;
@@ -11,36 +12,42 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/employees")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class EmployeeController {
 
-    @Autowired
-    private EmployeeService employeeService;
+    private final EmployeeService employeeService;
 
-    @GetMapping("/")
-    public ApiResponse<List<Employee>> getAllEmployees() {
-        return employeeService.getAllEmployees();
+    @GetMapping("/active")
+    public ResponseEntity<ApiResponse<List<EmployeesDto>>> getAllActiveEmployees() {
+        return employeeService.getAllActiveEmployees();
     }
 
-    @GetMapping("/{id}")
-    public ApiResponse<Employee> getEmployeeById(@PathVariable Long id) {
-        return employeeService.getEmployeeById(id);
+    @PostMapping("/get")
+    public ResponseEntity<ApiResponse<EmployeesDto>> getEmployeeById(@RequestBody EmployeesDto employeeDto) {
+        return employeeService.getEmployeeById(employeeDto.getId());
     }
 
-    //Falta obtener por username
-
-    @PostMapping("/")
-    public ApiResponse<Employee> createEmployee(@RequestBody Employee employee) {
-        return employeeService.saveEmployee(employee);
+    @PostMapping("/create")
+    public ResponseEntity<ApiResponse<EmployeesDto>> createEmployee(@RequestBody EmployeesDto employeeDto) {
+        return employeeService.createEmployee(employeeDto);
     }
 
-    @PutMapping("/{id}")
-    public ApiResponse<Employee> updateEmployee(@PathVariable Long id, @RequestBody Employee employee) {
-        return employeeService.updateEmployee(id, employee);
+    @PutMapping("/update")
+    public ResponseEntity<ApiResponse<EmployeesDto>> updateEmployee(@RequestBody EmployeesDto employeeDto) {
+        return employeeService.updateEmployee(employeeDto);
     }
 
-    @DeleteMapping("/{id}")
-    public ApiResponse<Void> deleteEmployee(@PathVariable Long id) {
-        return employeeService.deleteEmployee(id);
+    @PostMapping("/change-status")
+    public ResponseEntity<ApiResponse<EmployeesDto>> changeEmployeeStatus(@RequestBody EmployeesDto employeeDto) {
+        return employeeService.changeEmployeeStatus(employeeDto.getId());
     }
 
+    /* Metodo no definido aún
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<EmployeesDto>>> search(@RequestParam String term) {
+        return employeeService.searchEmployees(term);
+    }
+    */
+
+    //Es obligatorio agregar el @Validated?
 }
