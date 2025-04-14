@@ -1,7 +1,6 @@
 package utez.edu.mx.back.modules.projects.dto;
 
 import lombok.Data;
-import utez.edu.mx.back.modules.employees.dto.EmployeesDto;
 
 import java.util.Date;
 import java.util.List;

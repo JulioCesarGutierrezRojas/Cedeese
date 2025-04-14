@@ -1,13 +1,12 @@
 package utez.edu.mx.back.modules.employees.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import utez.edu.mx.back.kernel.ApiResponse;
-import utez.edu.mx.back.modules.employees.dto.EmployeesDto;
+import utez.edu.mx.back.modules.employees.controller.dto.*;
 import utez.edu.mx.back.modules.employees.service.EmployeeService;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -17,37 +16,41 @@ public class EmployeeController {
 
     private final EmployeeService employeeService;
 
-    @GetMapping("/active")
-    public ResponseEntity<ApiResponse<List<EmployeesDto>>> getAllActiveEmployees() {
-        return employeeService.getAllActiveEmployees();
+    // Crear empleado
+    @PostMapping("/")
+    public ResponseEntity<Object> createEmployee(@RequestBody @Valid CreateEmployeDto dto) {
+        return employeeService.createEmployee(dto);
     }
 
-    @PostMapping("/get")
-    public ResponseEntity<ApiResponse<EmployeesDto>> getEmployeeById(@RequestBody EmployeesDto employeeDto) {
-        return employeeService.getEmployeeById(employeeDto.getId());
+    // Actualizar empleado
+    @PostMapping("/update")
+    public ResponseEntity<Object> updateEmployee(@RequestBody @Valid UpadateEmployeeDto dto) {
+        return employeeService.updateEmployee(dto);
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<ApiResponse<EmployeesDto>> createEmployee(@RequestBody EmployeesDto employeeDto) {
-        return employeeService.createEmployee(employeeDto);
+    // Eliminar empleado
+    @PostMapping("/delete")
+    public ResponseEntity<Object> deleteEmployee(@RequestBody @Valid DeleteEmployeeDto dto) {
+        return employeeService.deleteEmployee(dto);
     }
 
-    @PutMapping("/update")
-    public ResponseEntity<ApiResponse<EmployeesDto>> updateEmployee(@RequestBody EmployeesDto employeeDto) {
-        return employeeService.updateEmployee(employeeDto);
+    // Obtener todos los empleados
+    @GetMapping("/all")
+    public ResponseEntity<Object> getAllEmployees() {
+        return employeeService.getAllEmployees();
     }
 
-    @PostMapping("/change-status")
-    public ResponseEntity<ApiResponse<EmployeesDto>> changeEmployeeStatus(@RequestBody EmployeesDto employeeDto) {
-        return employeeService.changeEmployeeStatus(employeeDto.getId());
+    // Obtener empleado por ID
+    @PostMapping("/get-by-id")
+    public ResponseEntity<Object> getEmployeeById(@RequestBody @Valid GetEmployeeDto dto) {
+        return employeeService.getEmployeeById(dto.getId());
     }
 
-    /* Metodo no definido aún
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<EmployeesDto>>> search(@RequestParam String term) {
-        return employeeService.searchEmployees(term);
+    // Cambiar estatus del empleado
+    @PatchMapping("/change-status")
+    public ResponseEntity<Object> changeEmployeeStatus(@RequestBody @Valid ChangeEmployeeStatusDto dto) {
+        return employeeService.changeEmployeeStatus(dto.getId());
     }
-    */
 
-    //Es obligatorio agregar el @Validated?
+
 }
