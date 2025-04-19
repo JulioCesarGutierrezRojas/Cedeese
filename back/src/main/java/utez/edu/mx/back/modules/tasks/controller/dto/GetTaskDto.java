@@ -1,9 +1,9 @@
-package utez.edu.mx.back.modules.tasks.dto;
+package utez.edu.mx.back.modules.tasks.controller.dto;
 
 import lombok.Data;
 
 @Data
-public class TaskDto {
+public class GetTaskDto {
     private Long id;
     private String name;
     private Boolean completed;

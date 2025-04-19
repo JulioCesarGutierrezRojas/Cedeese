@@ -1,5 +1,9 @@
 package utez.edu.mx.back.modules.projects.dto;
 
+
+
+
+
 import lombok.Data;
 
 import java.util.Date;
@@ -13,6 +17,6 @@ public class ProjectsDto {
     private Date startDate;
     private Date endDate;
     private Boolean status;
-    private List<EmployeesDto> employees;
+    //private List<EmployeesDto> employees;
     private List<ProjectPhaseDto> projectPhases;
 }
