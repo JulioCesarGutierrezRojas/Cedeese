@@ -3,6 +3,7 @@ package utez.edu.mx.back.modules.tasks.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import utez.edu.mx.back.modules.tasks.controller.dto.*;
 import utez.edu.mx.back.modules.tasks.service.TaskService;
@@ -17,7 +18,7 @@ public class TaskController {
 
     // Crear tarea
     @PostMapping("/")
-    public ResponseEntity<Object> createTask(@RequestBody @Valid CreateTaskDto dto) {
+    public ResponseEntity<Object> createTask(@RequestBody @Validated CreateTaskDto dto) {
         return taskService.createTask(dto);
     }
 

@@ -1,6 +1,6 @@
 package utez.edu.mx.back.modules.tasks.service;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -73,7 +73,7 @@ public class TaskService {
         );
     }
 
-    @Transactional(rollbackOn = SQLException.class)
+    @Transactional(rollbackFor = {SQLException.class})
     public ResponseEntity<Object> createTask(CreateTaskDto dto) {
         var project = projectRepository.findById(dto.getProjectId());
         var phase = phaseRepository.findById(dto.getPhaseId());
@@ -113,7 +113,7 @@ public class TaskService {
         );
     }
 
-    @Transactional(rollbackOn = SQLException.class)
+    @Transactional(rollbackFor = {SQLException.class})
     public ResponseEntity<Object> updateTask(UpdateTaskDto dto) {
         Optional<Task> optionalTask = taskRepository.findById(dto.getId());
 
@@ -162,7 +162,7 @@ public class TaskService {
         );
     }
 
-    @Transactional(rollbackOn = SQLException.class)
+    @Transactional(rollbackFor = {SQLException.class})
     public ResponseEntity<Object> deleteTask(DeleteTaskDto dto) {
         Optional<Task> optionalTask = taskRepository.findById(dto.getId());
 
@@ -181,7 +181,7 @@ public class TaskService {
         );
     }
 
-    @Transactional(rollbackOn = SQLException.class)
+    @Transactional(rollbackFor = {SQLException.class})
     public ResponseEntity<Object> changeTaskStatus(Long id, Boolean newStatus) {
         Optional<Task> optionalTask = taskRepository.findById(id);
 
