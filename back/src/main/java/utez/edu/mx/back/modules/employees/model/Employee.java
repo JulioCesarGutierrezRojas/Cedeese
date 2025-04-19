@@ -8,6 +8,7 @@ import org.hibernate.annotations.ColumnDefault;
 import utez.edu.mx.back.modules.projects.model.Project;
 import utez.edu.mx.back.modules.roles.model.Rol;
 
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -37,6 +38,13 @@ public class Employee {
     @Column(name = "status", insertable = false)
     @ColumnDefault("true")
     private Boolean status;
+
+    @Column(name = "reset_token", columnDefinition = "VARCHAR(5)")
+    private String resetToken;
+
+    @Column(name = "reset_token_expiration")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date resetTokenExpiration;
 
     @ManyToOne
     @JoinColumn(name = "rol_id")
