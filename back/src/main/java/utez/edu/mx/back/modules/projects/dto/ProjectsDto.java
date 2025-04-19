@@ -13,6 +13,6 @@ public class ProjectsDto {
     private Date startDate;
     private Date endDate;
     private Boolean status;
-    private List<EmployeesDto> employees;
+    /*private List<EmployeesDto> employees;*/
     private List<ProjectPhaseDto> projectPhases;
 }

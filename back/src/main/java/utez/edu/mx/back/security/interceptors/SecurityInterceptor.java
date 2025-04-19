@@ -7,8 +7,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+import utez.edu.mx.back.modules.activity.service.UserActivityService;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -23,6 +26,12 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class SecurityInterceptor implements HandlerInterceptor {
     private static final Logger logger = LoggerFactory.getLogger(SecurityInterceptor.class);
+
+    private final UserActivityService userActivityService;
+
+    public SecurityInterceptor(UserActivityService userActivityService) {
+        this.userActivityService = userActivityService;
+    }
 
     // Almacenamiento de solicitudes para rate limiting
     private final ConcurrentHashMap<String, RequestCounter> requestCounts = new ConcurrentHashMap<>();
@@ -76,6 +85,7 @@ public class SecurityInterceptor implements HandlerInterceptor {
         final String clientIp = getClientIp(request);
         final String userAgent = request.getHeader("User-Agent");
         final String requestUri = request.getRequestURI();
+        final String httpMethod = request.getMethod();
 
         // 1. Verificar IP bloqueada
         if (isBlockedIp(clientIp)) {
@@ -105,7 +115,7 @@ public class SecurityInterceptor implements HandlerInterceptor {
         request.setAttribute("startTime", System.currentTimeMillis());
 
         // 6. Log de acceso
-        logAccess(clientIp, userAgent, requestUri);
+        logAccess(clientIp, userAgent, requestUri, httpMethod);
 
         return true;
     }
@@ -225,8 +235,27 @@ public class SecurityInterceptor implements HandlerInterceptor {
 
     // ================== [LOGGING & RESPONSE] ================== //
 
-    private void logAccess(String ip, String userAgent, String uri) {
-        logger.info("Acceso permitido | IP: {} | UA: {} | Endpoint: {}", ip, userAgent, uri);
+    private void logAccess(String ip, String userAgent, String uri, String httpMethod) {
+        logger.info("Acceso permitido | IP: {} | UA: {} | Endpoint: {} | Method: {}", ip, userAgent, uri, httpMethod);
+
+        try {
+            // Get authenticated user
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = "anonymous";
+
+            if (authentication != null && authentication.isAuthenticated()) {
+                username = authentication.getName();
+                // Don't log system user activities
+                if ("anonymousUser".equals(username)) {
+                    username = "anonymous";
+                }
+            }
+
+            // Log the activity in the database
+            userActivityService.logActivity(httpMethod, username, uri);
+        } catch (Exception e) {
+            logger.error("Error logging user activity: {}", e.getMessage());
+        }
     }
 
     private void logViolation(String ip, String reason, String userAgent) {
