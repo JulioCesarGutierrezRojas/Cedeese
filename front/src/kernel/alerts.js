@@ -20,6 +20,40 @@ export function showAlertWithoutCancel(title, message, type = 'success') {
 
 export function showConfirmation(title, message, type = 'warning', callback, cancelCallback) {
     const appElement = document.getElementById('app');
+    const container = document.querySelector('.container'); // tu div principal
+
+    Swal.fire({
+        title: title,
+        text: message,
+        icon: type,
+        showCancelButton: true,
+        showCloseButton: false,
+        confirmButtonText: 'Aceptar',
+        cancelButtonText: 'Cancelar',
+        target: container || undefined, // esto lo centra dentro del container
+        backdrop: true,
+        didOpen: () => {
+            if (appElement) {
+                appElement.setAttribute('inert', '');
+            }
+        },
+        willClose: () => {
+            if (appElement) {
+                appElement.removeAttribute('inert');
+            }
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            callback();
+        } else {
+            cancelCallback && cancelCallback();
+        }
+    });
+}
+
+
+/*export function showConfirmation(title, message, type = 'warning', callback, cancelCallback) {
+    const appElement = document.getElementById('app');
     Swal.fire({
         title: title,
         text: message,
@@ -45,7 +79,7 @@ export function showConfirmation(title, message, type = 'warning', callback, can
             cancelCallback && cancelCallback();
         }
     });
-}
+}*/
 
 export function showConfirmationWithoutCancel(title, message, type = 'warning', callback, cancelCallback = () => {}) {
     Swal.fire({
