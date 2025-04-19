@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IEmployeeRepository extends JpaRepository<Employee,Long> {
-    Optional<Employee> findByUsername(String username);
+    Optional<Employee> findByEmail(String email);
+    Optional<Employee> findByResetToken(String resetToken);
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
     boolean existsByUsernameAndIdNot(String username, Long id);
