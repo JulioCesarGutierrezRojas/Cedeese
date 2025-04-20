@@ -30,14 +30,14 @@ const LoginForm = () => {
             return;
         }
 
-        if (!passwordError) {
-            showWarningToast({
-                title: 'Contraseña inválida',
-                text: 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número, un carácter especial y sin espacios.'
-            });
-            setIsLoading(false);
-            return;
-        }
+        // if (!passwordError) {
+        //     showWarningToast({
+        //         title: 'Contraseña inválida',
+        //         text: 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número, un carácter especial y sin espacios.'
+        //     });
+        //     setIsLoading(false);
+        //     return;
+        // }
 
         try {
             await signIn(email, password);

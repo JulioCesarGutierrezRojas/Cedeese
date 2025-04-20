@@ -1,4 +1,4 @@
-import handleRequest from "../../../config/http-client.gateway";
+import { handleRequest } from "../../../config/http-client.gateway";
 
 const Controller = async ({ email, password }) => {
     try {
@@ -25,8 +25,32 @@ const Controller = async ({ email, password }) => {
     }
 };
 
+// controller.js
+// En tu controller.js
 export const signIn = async (email, password) => {
-    return Controller({ email, password });
+    try {
+        const response = await Controller({ email, password });
+        if (response.success && response.token) {
+            try {
+                const tokenData = JSON.parse(atob(response.token.split('.')[1]));
+                localStorage.setItem("role", tokenData.role || 'USER');
+                return response;
+            } catch (e) {
+                console.error("Error decoding token:", e);
+                return {
+                    success: false,
+                    message: "Error procesando la respuesta de autenticación"
+                };
+            }
+        }
+        return response;
+    } catch (error) {
+        console.error("Error en signIn:", error);
+        return {
+            success: false,
+            message: error.response?.data?.message || error.message || "Error al iniciar sesión",
+        };
+    }
 };
 
 export const requestPasswordReset = async (email) => {
