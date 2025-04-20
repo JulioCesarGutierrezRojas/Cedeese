@@ -52,7 +52,7 @@ const Task = () => {
                     <div className="card-header">Tarea #{task.id}</div>
                     <div className="card-body">
                         <blockquote className="blockquote mb-2">
-                            <p>{task.text}</p>
+                            <p>Fase</p>
                             <footer className="blockquote-footer">
                                 <cite title="Source Title">Fuente desconocida</cite>
                             </footer>
