@@ -26,6 +26,10 @@ const AppRouter = () => {
                     <Route path="taskform" element={<><Sidebar role="RD"/><TaskForm /></>} />
                     <Route path="/ap-user/" element={<ApView />} />
                     <Route path="/rape-user/" element={<RapeView/>}/>
+                    
+                    <Route path="/home" element={<Home/>}/>,
+                    <Route path="/customers" element={<Customers/>}/>,
+                    <Route path="/tasks" element={<Task/>}/>,
                 </Routes>
             </div>
         </>
