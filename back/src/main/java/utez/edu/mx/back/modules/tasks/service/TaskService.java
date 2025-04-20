@@ -194,6 +194,30 @@ public class TaskService {
     }
 
     /**
+     * Marks a task as completed
+     * @param dto The DTO containing the task ID
+     * @return ResponseEntity with success message or error message
+     */
+    @Transactional(rollbackFor = {SQLException.class})
+    public ResponseEntity<Object> markTaskAsCompleted(ChangeTaskStatusDto dto) {
+        Task foundTask = taskRepository.findById(dto.getId()).orElse(null);
+
+        if (Objects.isNull(foundTask))
+            return new ResponseEntity<>(
+                    new ApiResponse<>(null, TypesResponse.WARNING, "Tarea no encontrada"),
+                    HttpStatus.NOT_FOUND
+            );
+
+        foundTask.setCompleted(true);
+        taskRepository.save(foundTask);
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(null, TypesResponse.SUCCESS, "Tarea marcada como completada correctamente."),
+                HttpStatus.OK
+        );
+    }
+
+    /**
      * Gets all tasks for a project, optionally filtered by phase
      * @param dto The DTO containing the project ID and optionally the phase ID
      * @return ResponseEntity with the list of tasks or an error message
