@@ -51,4 +51,12 @@ public class Project {
     @OneToMany(mappedBy = "project")
     @JsonIgnore
     private List<Task> tasks;
+
+    public Project(String name, String identifier, Date startDate, Date endDate, Boolean status) {
+        this.name = name;
+        this.identifier = identifier;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.status = status;
+    }
 }
