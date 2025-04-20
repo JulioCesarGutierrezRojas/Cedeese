@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 
 const TaskForm = () => {
     const navigate = useNavigate();
-    
+
     const [formData, setFormData] = useState({
         titulo: "",
         fase: "",
@@ -22,7 +22,7 @@ const TaskForm = () => {
         localStorage.setItem("tareas", JSON.stringify(nuevasTareas));
         navigate("/taskrd");
     };
-    
+
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -31,22 +31,22 @@ const TaskForm = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-    
+
         const nuevasTareas = JSON.parse(localStorage.getItem("tareas")) || [];
-    
+
         nuevasTareas.push({
             id: Date.now(),
             titulo: formData.titulo,
             fase: formData.fase,
             estado: formData.estado,
         });
-    
+
         localStorage.setItem("tareas", JSON.stringify(nuevasTareas));
         console.log("Tarea creada:", formData);
-    
+
         navigate("/rd");
     };
-    
+
 
     return (
         <div className="d-flex">
