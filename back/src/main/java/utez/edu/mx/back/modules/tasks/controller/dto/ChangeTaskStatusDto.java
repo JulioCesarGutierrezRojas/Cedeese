@@ -7,8 +7,5 @@ import lombok.Data;
 public class ChangeTaskStatusDto {
     @NotNull(message = "El ID de la tarea es obligatorio")
     private Long id;
-
-    @NotNull(message = "El estatus de la tarea es obligatorio")
-    private Boolean status;
     
 }
