@@ -83,7 +83,12 @@ public class AuthService {
             UserDetails userDetails = userDetailsService.loadUserByUsername(dto.getEmail());
             String token = jwtProvider.generateToken(userDetails, employee);
 
-            return new ResponseEntity<>(new ApiResponse<>(token, TypesResponse.SUCCESS, "Inicio de sesión exitoso"), HttpStatus.OK);
+            // Create a response map with token and role
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("role", employee.getRol().getRol().toString());
+
+            return new ResponseEntity<>(new ApiResponse<>(response, TypesResponse.SUCCESS, "Inicio de sesión exitoso"), HttpStatus.OK);
         } catch (AuthenticationException e) {
             logger.error("Error de Autenticación: {}", e.getMessage());
             return new ResponseEntity<>(new ApiResponse<>(TypesResponse.ERROR, "Verifique sus credenciales"), HttpStatus.BAD_REQUEST);
