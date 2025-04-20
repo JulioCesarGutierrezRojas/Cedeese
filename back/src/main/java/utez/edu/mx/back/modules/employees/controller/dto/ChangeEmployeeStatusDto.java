@@ -7,7 +7,4 @@ import lombok.Data;
 public class ChangeEmployeeStatusDto {
     @NotNull(message = "El ID del empleado es obligatorio")
     private Long id;
-
-    @NotNull(message = "El estatus es obligatorio")
-    private Boolean status;
 }

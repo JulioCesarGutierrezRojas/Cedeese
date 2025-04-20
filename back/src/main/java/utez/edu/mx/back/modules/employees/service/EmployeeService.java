@@ -13,9 +13,11 @@ import utez.edu.mx.back.modules.employees.model.Employee;
 import utez.edu.mx.back.modules.employees.model.IEmployeeRepository;
 import utez.edu.mx.back.modules.roles.model.IRolRepository;
 import utez.edu.mx.back.modules.roles.model.Rol;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -25,22 +27,43 @@ import java.util.stream.Collectors;
 public class EmployeeService {
     private final IEmployeeRepository repository;
     private final IRolRepository rolRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional(rollbackFor = SQLException.class)
     public ResponseEntity<Object> createEmployee(CreateEmployeDto dto) {
 
         // Validar existencia de username
-        if (repository.existsByUsername(dto.getUsername())) {
+        if (repository.existsByUsername(dto.getUsername()))
             return new ResponseEntity<>(
                     new ApiResponse<>(null, TypesResponse.WARNING, "El nombre de usuario ya está registrado"),
                     HttpStatus.BAD_REQUEST
             );
-        }
 
         // Validar existencia de email
-        if (repository.existsByEmail(dto.getEmail())) {
+        if (repository.existsByEmail(dto.getEmail()))
             return new ResponseEntity<>(
                     new ApiResponse<>(null, TypesResponse.WARNING, "El correo electrónico ya está registrado"),
+                    HttpStatus.BAD_REQUEST
+            );
+
+        // Validar formato de email
+        if (!dto.getEmail().matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$"))
+            return new ResponseEntity<>(
+                    new ApiResponse<>(null, TypesResponse.WARNING, "El formato del correo electrónico no es válido"),
+                    HttpStatus.BAD_REQUEST
+            );
+
+        // Validar longitud de username (mínimo 3 caracteres)
+        if (dto.getUsername().length() < 3)
+            return new ResponseEntity<>(
+                    new ApiResponse<>(null, TypesResponse.WARNING, "El nombre de usuario debe tener al menos 3 caracteres"),
+                    HttpStatus.BAD_REQUEST
+            );
+
+        // Validar longitud de password (mínimo 6 caracteres)
+        if (dto.getPassword().length() < 8) {
+            return new ResponseEntity<>(
+                    new ApiResponse<>(null, TypesResponse.WARNING, "La contraseña debe tener al menos 6 caracteres"),
                     HttpStatus.BAD_REQUEST
             );
         }
@@ -56,30 +79,17 @@ public class EmployeeService {
 
         Rol rol = optionalRol.get();
 
+        // Encriptar la contraseña
+        String encryptedPassword = passwordEncoder.encode(dto.getPassword());
+
         // Crear entidad
-        Employee employee = new Employee();
-        employee.setUsername(dto.getUsername());
-        employee.setPassword(dto.getPassword());
-        employee.setName(dto.getName());
-        employee.setLastname(dto.getLastname());
-        employee.setEmail(dto.getEmail());
-        employee.setStatus(true);
-        employee.setRol(rol);
+        Employee employee = new Employee(dto.getUsername(), encryptedPassword, dto.getName(), dto.getLastname(), dto.getEmail(), true, rol);
 
         // Guardar en base de datos
-        Employee saved = repository.save(employee);
-
-        // Crear DTO de respuesta
-        GetEmployeeDto responseDto = new GetEmployeeDto();
-        responseDto.setId(saved.getId());
-        responseDto.setUsername(saved.getUsername());
-        responseDto.setName(saved.getName());
-        responseDto.setLastname(saved.getLastname());
-        responseDto.setEmail(saved.getEmail());
-        responseDto.setStatus(saved.getStatus());
+        repository.save(employee);
 
         return new ResponseEntity<>(
-                new ApiResponse<>(responseDto, TypesResponse.SUCCESS, "Empleado creado exitosamente"),
+                new ApiResponse<>(null, TypesResponse.SUCCESS, "Empleado creado exitosamente"),
                 HttpStatus.CREATED
         );
     }
@@ -90,12 +100,11 @@ public class EmployeeService {
 
         // Buscar empleado por ID
         Optional<Employee> optionalEmployee = repository.findById(dto.getId());
-        if (optionalEmployee.isEmpty()) {
+        if (optionalEmployee.isEmpty())
             return new ResponseEntity<>(
                     new ApiResponse<>(null, TypesResponse.WARNING, "El empleado no existe"),
                     HttpStatus.NOT_FOUND
             );
-        }
 
         Employee existingEmployee = optionalEmployee.get();
 
@@ -135,19 +144,10 @@ public class EmployeeService {
         existingEmployee.setRol(rol);
 
         // Guardar cambios
-        Employee updated = repository.save(existingEmployee);
-
-        // Crear respuesta
-        GetEmployeeDto responseDto = new GetEmployeeDto();
-        responseDto.setId(updated.getId());
-        responseDto.setUsername(updated.getUsername());
-        responseDto.setName(updated.getName());
-        responseDto.setLastname(updated.getLastname());
-        responseDto.setEmail(updated.getEmail());
-        responseDto.setStatus(updated.getStatus());
+        repository.save(existingEmployee);
 
         return new ResponseEntity<>(
-                new ApiResponse<>(responseDto, TypesResponse.SUCCESS, "Empleado actualizado correctamente"),
+                new ApiResponse<>(null, TypesResponse.SUCCESS, "Empleado actualizado correctamente"),
                 HttpStatus.OK
         );
     }
@@ -179,72 +179,46 @@ public class EmployeeService {
     public ResponseEntity<Object> getAllEmployees() {
         List<Employee> employees = repository.findAll();
 
-        List<GetEmployeeDto> dtoList = employees.stream().map(employee -> {
-            GetEmployeeDto dto = new GetEmployeeDto();
-            dto.setId(employee.getId());
-            dto.setUsername(employee.getUsername());
-            dto.setName(employee.getName());
-            dto.setLastname(employee.getLastname());
-            dto.setEmail(employee.getEmail());
-            dto.setStatus(employee.getStatus());
-            return dto;
-        }).collect(Collectors.toList());
-
         return new ResponseEntity<>(
-                new ApiResponse<>(dtoList, TypesResponse.SUCCESS, "Lista de empleados"),
+                new ApiResponse<>(employees, TypesResponse.SUCCESS, "Lista de empleados"),
                 HttpStatus.OK
         );
     }
 
 
     @Transactional(readOnly = true)
-    public ResponseEntity<Object> getEmployeeById(Long id) {
-        Optional<Employee> optionalEmployee = repository.findById(id);
+    public ResponseEntity<Object> getEmployeeById(GetEmployeeDto dto) {
+        Employee foundEmployee = repository.findById(dto.getId()).orElse(null);
 
-        if (optionalEmployee.isEmpty()) {
+        if (Objects.isNull(foundEmployee))
             return new ResponseEntity<>(
                     new ApiResponse<>(null, TypesResponse.WARNING, "Empleado no encontrado"),
                     HttpStatus.NOT_FOUND
             );
-        }
-
-        Employee employee = optionalEmployee.get();
-        GetEmployeeDto dto = new GetEmployeeDto();
-        dto.setId(employee.getId());
-        dto.setUsername(employee.getUsername());
-        dto.setName(employee.getName());
-        dto.setLastname(employee.getLastname());
-        dto.setEmail(employee.getEmail());
-        dto.setStatus(employee.getStatus());
 
         return new ResponseEntity<>(
-                new ApiResponse<>(dto, TypesResponse.SUCCESS, "Empleado encontrado"),
+                new ApiResponse<>(foundEmployee, TypesResponse.SUCCESS, "Empleado encontrado"),
                 HttpStatus.OK
         );
     }
 
 
     @Transactional(rollbackFor = SQLException.class)
-    public ResponseEntity<Object> changeEmployeeStatus(Long id) {
-        Optional<Employee> optionalEmployee = repository.findById(id);
+    public ResponseEntity<Object> changeEmployeeStatus(ChangeEmployeeStatusDto dto) {
+        Employee foundEmployee = repository.findById(dto.getId()).orElse(null);
 
-        if (optionalEmployee.isEmpty()) {
+        if (Objects.isNull(foundEmployee))
             return new ResponseEntity<>(
                     new ApiResponse<>(null, TypesResponse.WARNING, "Empleado no encontrado"),
                     HttpStatus.NOT_FOUND
             );
-        }
 
-        Employee employee = optionalEmployee.get();
-        Boolean currentStatus = employee.getStatus();
-        employee.setStatus(!currentStatus); // alterna el estado: true -> false, false -> true
+        foundEmployee.setStatus(!foundEmployee.getStatus());
 
-        repository.save(employee);
-
-        String message = currentStatus ? "Empleado desactivado" : "Empleado activado";
+        repository.save(foundEmployee);
 
         return new ResponseEntity<>(
-                new ApiResponse<>(null, TypesResponse.SUCCESS, message),
+                new ApiResponse<>(null, TypesResponse.SUCCESS, "Estado del empleado actualizado correctamente" ),
                 HttpStatus.OK
         );
     }
