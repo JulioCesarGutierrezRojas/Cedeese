@@ -64,7 +64,10 @@ const LoginForm = () => {
                     localStorage.clear(); // Limpiar localStorage si el rol no es válido
             }
         } catch (e) {
-            showWarningToast({ title: 'Error al iniciar sesión', text: e.message });
+            showWarningToast({ 
+                title: 'Error al iniciar sesión', 
+                text: e?.message || 'Error desconocido al iniciar sesión'
+            });
         } finally {
             setIsLoading(false);
         }

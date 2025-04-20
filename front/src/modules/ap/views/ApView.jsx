@@ -21,7 +21,7 @@ const ApView = () => {
       } catch (error) {
         showWarningToast({ 
           title: 'Error al cargar tareas', 
-          text: error.message 
+          text: error?.message || 'Error desconocido al cargar tareas'
         });
         // Fallback a datos de ejemplo si hay error
         setTasks([
@@ -49,7 +49,7 @@ const ApView = () => {
     } catch (error) {
       showWarningToast({ 
         title: 'Error al actualizar tarea', 
-        text: error.message 
+        text: error?.message || 'Error desconocido al actualizar tarea'
       });
     } finally {
       setIsLoading(false);

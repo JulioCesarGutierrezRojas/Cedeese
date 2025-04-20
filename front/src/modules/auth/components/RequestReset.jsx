@@ -12,10 +12,10 @@ const RequestReset = ({ email, setEmail, setStep }) => {
         setIsLoading(true);
         try {
             const response = await sendEmail(email);
-            showSuccessToast({ title: 'Éxito', text: response });
+            showSuccessToast({ title: 'Éxito', text: response || 'Código enviado correctamente' });
             setStep(2); // Sigue a validateTopken
         } catch (error) {
-            showWarningToast({ title: 'Error', text: error.message });
+            showWarningToast({ title: 'Error', text: error?.message || 'Error desconocido al enviar el correo' });
         } finally {
             setIsLoading(false);
         }

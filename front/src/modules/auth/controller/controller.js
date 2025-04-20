@@ -14,28 +14,28 @@ export const signIn = async (email, password) => {
 }
 
 export const sendEmail = async (email) => {
-    const response = await handleRequest('post', '/auth/recover-password/', { email })
+    const response = await handleRequest('post', '/auth/recover-password', { email })
 
     if (response.type !== 'SUCCESS')
         throw new Error(response.text);
 
-    return response.result.message;
+    return response.result?.message || 'Código enviado correctamente';
 }
 
 export const verifyToken = async (token) => {
-    const response = await handleRequest('post', '/auth/verify-token/', { token })
+    const response = await handleRequest('post', '/auth/verify-token', { token })
 
     if (response.type !== 'SUCCESS')
         throw new Error(response.text);
 
-    return response.result;
+    return response.result || { message: 'Código verificado correctamente' };
 }
 
 export const changePassword = async (user,  new_password, confirm_password) => {
-    const response = await handleRequest('post', '/auth/change-password/', { user, new_password, confirm_password })
+    const response = await handleRequest('post', '/auth/change-password', { user, new_password, confirm_password })
 
     if (response.type !== 'SUCCESS')
         throw new Error(response.text);
 
-    return response.result;
+    return response.result || { message: 'Contraseña cambiada correctamente' };
 }

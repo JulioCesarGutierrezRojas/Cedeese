@@ -40,10 +40,10 @@ const ChangePassword = ({ email, token, setStep, user }) => {
 
         try {
             const response = await changePassword(user, newPassword, confirmPassword);
-            showSuccessToast({ title: 'Éxito', text: response.message });
+            showSuccessToast({ title: 'Éxito', text: response?.message || 'Contraseña cambiada correctamente' });
             navigate('/');
         } catch (error) {
-            showWarningToast({ title: 'Error', text: error.message });
+            showWarningToast({ title: 'Error', text: error?.message || 'Error desconocido al cambiar la contraseña' });
         } finally {
             setIsLoading(false);
         }

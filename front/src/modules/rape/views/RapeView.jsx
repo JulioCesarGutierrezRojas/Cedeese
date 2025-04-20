@@ -18,7 +18,7 @@ const RapeView = () => {
       } catch (error) {
         showWarningToast({ 
           title: 'Error al cargar proyectos', 
-          text: error.message 
+          text: error?.message || 'Error desconocido al cargar proyectos'
         });
       } finally {
         setIsLoading(false);
@@ -46,7 +46,7 @@ const RapeView = () => {
     } catch (error) {
       showWarningToast({ 
         title: 'Error al cerrar proyecto', 
-        text: error.message 
+        text: error?.message || 'Error desconocido al cerrar proyecto'
       });
     } finally {
       setIsLoading(false);
