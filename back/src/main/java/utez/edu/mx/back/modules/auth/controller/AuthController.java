@@ -14,7 +14,7 @@ import utez.edu.mx.back.modules.auth.service.AuthService;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"*"})
 @RequiredArgsConstructor
 @Tag(name = "Autenticación", description = "Endpoints de API para autenticación de usuarios y gestión de contraseñas")
 public class AuthController {

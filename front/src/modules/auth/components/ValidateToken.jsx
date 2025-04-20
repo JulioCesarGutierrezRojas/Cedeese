@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styles from '../../../styles/form-login.module.css';
 import Loader from '../../../components/Loader.jsx';
 import { showSuccessToast, showWarningToast } from '../../../kernel/alerts.js';
-import { verifyToken, resendToken } from '../controller/controller.js'; // si vas a manejar el reenvío
+import { verifyToken } from '../controller/controller.js'; // si vas a manejar el reenvío
 
 const ValidateToken = ({ email, token, setToken, setStep, setUser }) => {
     const [isLoading, setIsLoading] = useState(false);

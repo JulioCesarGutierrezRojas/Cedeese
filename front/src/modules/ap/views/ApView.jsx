@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const AppView = () => {
+const ApView = () => {
   const dummyTasks = [
     { id: 1, name: 'Diseñar la interfaz', phase: 'Diseño', completed: false },
     { id: 2, name: 'Implementar autenticación', phase: 'Desarrollo', completed: false },
@@ -81,4 +81,4 @@ const AppView = () => {
   );
 };
 
-export default AppView;
+export default ApView;
