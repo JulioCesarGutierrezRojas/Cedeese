@@ -1,169 +1,44 @@
-import { handleRequest } from "../../../config/http-client.gateway";
-
-const Controller = async ({ email, password }) => {
-    try {
-        const response = await handleRequest({
-            method: "POST",
-            url: "/auth/login", // Asegúrate que coincide con tu endpoint en Spring
-            data: { email, password },
-        });
-
-        const { token } = response;
-        localStorage.setItem("token", token);
-
-        return {
-            success: true,
-            token,
-        };
-    } catch (error) {
-        console.error("Error en loginController:", error);
-
-        return {
-            success: false,
-            message: error?.response?.data?.general || "Error al iniciar sesión",
-        };
-    }
-};
+import {handleRequest} from "../../../config/http-client.gateway.js";
 
 // controller.js
 // En tu controller.js
 export const signIn = async (email, password) => {
-    try {
-        const response = await Controller({ email, password });
-        if (response.success && response.token) {
-            try {
-                const tokenData = JSON.parse(atob(response.token.split('.')[1]));
-                localStorage.setItem("role", tokenData.role || 'USER');
-                return response;
-            } catch (e) {
-                console.error("Error decoding token:", e);
-                return {
-                    success: false,
-                    message: "Error procesando la respuesta de autenticación"
-                };
-            }
-        }
-        return response;
-    } catch (error) {
-        console.error("Error en signIn:", error);
-        return {
-            success: false,
-            message: error.response?.data?.message || error.message || "Error al iniciar sesión",
-        };
-    }
-};
+    const response = await handleRequest('post', '/auth/signin/', { email, password });
 
-export const requestPasswordReset = async (email) => {
-    try {
-        const response = await handleRequest({
-            method: "POST",
-            url: "/auth/request-password-reset",
-            data: { email },
-        });
+    if (response.type !== 'SUCCESS')
+        throw new Error(response.text);
 
-        return {
-            success: true,
-            message: "Se ha enviado un correo con instrucciones para restablecer tu contraseña.",
-        };
-    } catch (error) {
-        console.error("Error en requestPasswordReset:", error);
-
-        return {
-            success: false,
-            message: error?.response?.data?.general || "Error al solicitar el restablecimiento de contraseña",
-        };
-    }
-};
-
-export const validateResetToken = async (token) => {
-    try {
-        const response = await handleRequest({
-            method: "POST",
-            url: "/auth/validate-reset-token",
-            data: { token },
-        });
-
-        return {
-            success: true,
-            message: "Token válido",
-        };
-    } catch (error) {
-        console.error("Error en validateResetToken:", error);
-
-        return {
-            success: false,
-            message: error?.response?.data?.general || "Token inválido o expirado",
-        };
-    }
-};
-
-export const resetPassword = async (token, newPassword) => {
-    try {
-        const response = await handleRequest({
-            method: "POST",
-            url: "/auth/reset-password",
-            data: { token, newPassword },
-        });
-
-        return {
-            success: true,
-            message: "Contraseña restablecida correctamente",
-        };
-    } catch (error) {
-        console.error("Error en resetPassword:", error);
-
-        return {
-            success: false,
-            message: error?.response?.data?.general || "Error al restablecer la contraseña",
-        };
-    }
-};
+    const {token, role, user} = response.result;
+    localStorage.setItem('token', token);
+    localStorage.setItem('role', role);
+    localStorage.setItem('user', user);
+    return true;
+}
 
 export const sendEmail = async (email) => {
-    try {
-        const response = await requestPasswordReset(email);
-        return response.message;
-    } catch (error) {
-        throw new Error(error.message || "Error al enviar el correo de recuperación");
+    const response = await handleRequest('post', '/auth/recover-password', { email });
+  
+    if (response.type !== 'SUCCESS') {
+      throw new Error(response.text || 'Error al enviar correo');
     }
-};
+  
+    return response.result.message;
+  };
 
 export const verifyToken = async (token) => {
-    try {
-        const response = await validateResetToken(token);
-        return {
-            success: true,
-            message: "Token verificado correctamente",
-            data: { token } // Simulamos datos del usuario para mantener la interfaz
-        };
-    } catch (error) {
-        throw new Error(error.message || "Error al verificar el token");
-    }
-};
+    const response = await handleRequest('post', '/auth/verify-token/', { token })
 
-export const resendToken = async (email) => {
-    try {
-        await requestPasswordReset(email);
-        return "Se ha reenviado el código de verificación a tu correo";
-    } catch (error) {
-        throw new Error(error.message || "Error al reenviar el código");
-    }
-};
+    if (response.type !== 'SUCCESS')
+        throw new Error(response.text);
 
-export const changePassword = async (user, newPassword, confirmPassword) => {
-    try {
-        if (newPassword !== confirmPassword) {
-            throw new Error("Las contraseñas no coinciden");
-        }
+    return response.result;
+}
 
-        const response = await resetPassword(user.token, newPassword);
-        return {
-            success: true,
-            message: "Contraseña cambiada correctamente"
-        };
-    } catch (error) {
-        throw new Error(error.message || "Error al cambiar la contraseña");
-    }
-};
+export const changePassword = async (user,  new_password, confirm_password) => {
+    const response = await handleRequest('post', '/auth/change-password/', { user, new_password, confirm_password })
 
-export default Controller;
+    if (response.type !== 'SUCCESS')
+        throw new Error(response.text);
+
+    return response.result;
+}

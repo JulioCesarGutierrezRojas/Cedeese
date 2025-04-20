@@ -12,6 +12,7 @@ const RecoverPassword = () => {
     const [token, setToken] = useState('');
     const [user, setUser] = useState(null);
 
+
     return (
         <div className={styles.container}>
             <div className={styles.leftPanel}>

@@ -5,7 +5,7 @@ import logo from '../../../assets/logo-cds.jpg';
 import Loader from '../../../components/Loader';
 import { showWarningToast } from '../../../kernel/alerts.js';
 import { signIn } from '../controller/controller.js';
-import { validateEmail, validatePassword } from '../../../kernel/validations.js';
+//import { validateEmail, validatePassword } from '../../../kernel/validations.js';
 
 const LoginForm = () => {
     const [email, setEmail] = useState('');
@@ -18,31 +18,42 @@ const LoginForm = () => {
         e.preventDefault();
         setIsLoading(true);
 
-        const emailError = validateEmail(email);
-        const passwordError = validatePassword(password);
+        /* const emailError = validateEmail(email);
+         const passwordError = validatePassword(password);
 
-        if (!emailError) {
-            showWarningToast({
-                title: 'Correo inválido',
-                text: 'Por favor ingresa un correo válido sin espacios.'
-            });
-            setIsLoading(false);
-            return;
-        }
+          if (!emailError) {
+             showWarningToast({
+                 title: 'Correo inválido',
+                 text: 'Por favor ingresa un correo válido sin espacios.'
+             });
+             setIsLoading(false);
+             return;
+         }
 
-        // if (!passwordError) {
-        //     showWarningToast({
-        //         title: 'Contraseña inválida',
-        //         text: 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número, un carácter especial y sin espacios.'
-        //     });
-        //     setIsLoading(false);
-        //     return;
-        // }
-
+        if (!passwordError) {
+             showWarningToast({
+                 title: 'Contraseña inválida',
+                 text: 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número, un carácter especial y sin espacios.'
+             });
+             setIsLoading(false);
+             return;
+         }*/
+    
         try {
             await signIn(email, password);
             const role = localStorage.getItem('role');
-            navigate(role === 'MASTER' ? '/dashboard' : '/projects');
+            
+            // Redirección basada en el rol
+            switch(role) {
+                case 'MASTER':
+                    navigate('/dashboard');
+                    break;
+                case 'RD':
+                    navigate('/rd');
+                    break;
+                default:
+                    navigate('/projects');
+            }
         } catch (e) {
             showWarningToast({ title: 'Error al iniciar sesión', text: e.message });
         } finally {
