@@ -34,4 +34,11 @@ public class ProjectPhase {
     @ManyToOne
     @JoinColumn(name = "phase_id")
     private Phase phase;
+
+    public ProjectPhase(Project project, Phase phase, Date startDate, Boolean completed) {
+        this.project = project;
+        this.phase = phase;
+        this.startDate = startDate;
+        this.completed = completed;
+    }
 }
