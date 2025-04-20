@@ -12,14 +12,14 @@ const TaskRd = () => {
         const tareasGuardadas = JSON.parse(localStorage.getItem("tareas")) || [];
         setTareas(tareasGuardadas);
     }, []);
-    
+
 
     const eliminarTarea = (id) => {
         const nuevasTareas = tareas.filter(tarea => tarea.id !== id);
         setTareas(nuevasTareas);
         localStorage.setItem("tareas", JSON.stringify(nuevasTareas));
     };
-    
+
 
     const handleCreateTask = () => {
         navigate("/taskform");
