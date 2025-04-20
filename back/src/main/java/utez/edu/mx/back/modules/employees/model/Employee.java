@@ -53,4 +53,14 @@ public class Employee {
     @ManyToMany(mappedBy = "employees", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Project> projects;
+
+    public Employee(String username, String password, String name, String lastname, String email, Boolean status, Rol rol) {
+        this.username = username;
+        this.password = password;
+        this.name = name;
+        this.lastname = lastname;
+        this.email = email;
+        this.status = status;
+        this.rol = rol;
+    }
 }

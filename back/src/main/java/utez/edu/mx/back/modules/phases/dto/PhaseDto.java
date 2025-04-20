@@ -2,7 +2,7 @@ package utez.edu.mx.back.modules.phases.dto;
 
 import lombok.Data;
 import utez.edu.mx.back.modules.phases.model.TypePhase;
-import utez.edu.mx.back.modules.tasks.controller.dto.GetTaskDto;
+import utez.edu.mx.back.modules.tasks.model.Task;
 
 import java.util.List;
 
@@ -10,5 +10,5 @@ import java.util.List;
 public class PhaseDto {
     private Long id;
     private TypePhase phase;
-    private List<GetTaskDto> tasks;
+    private List<Task> tasks;
 }

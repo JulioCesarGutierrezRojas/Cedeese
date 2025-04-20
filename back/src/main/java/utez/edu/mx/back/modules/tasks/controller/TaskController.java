@@ -1,6 +1,5 @@
 package utez.edu.mx.back.modules.tasks.controller;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -23,33 +22,39 @@ public class TaskController {
     }
 
     // Actualizar tarea
-    @PostMapping("/update")
-    public ResponseEntity<Object> updateTask(@RequestBody @Valid UpdateTaskDto dto) {
+    @PutMapping("/")
+    public ResponseEntity<Object> updateTask(@RequestBody @Validated UpdateTaskDto dto) {
         return taskService.updateTask(dto);
     }
 
     // Eliminar tarea
-    @PostMapping("/delete")
-    public ResponseEntity<Object> deleteTask(@RequestBody @Valid DeleteTaskDto dto) {
+    @DeleteMapping("/")
+    public ResponseEntity<Object> deleteTask(@RequestBody @Validated DeleteTaskDto dto) {
         return taskService.deleteTask(dto);
     }
 
     // Obtener todas las tareas
-    @GetMapping("/all")
+    @GetMapping("/")
     public ResponseEntity<Object> getAllTasks() {
         return taskService.getAllTasks();
     }
 
     // Obtener tarea por ID
-    @PostMapping("/get-by-id")
-    public ResponseEntity<Object> getTaskById(@RequestBody @Valid GetTaskDto dto) {
-        return taskService.getTaskById(dto.getId());
+    @GetMapping("/one")
+    public ResponseEntity<Object> getTaskById(@RequestBody @Validated GetTaskDto dto) {
+         return taskService.getTaskById(dto);
     }
 
     // Cambiar estatus (completado/no completado)
     @PatchMapping("/change-status")
-    public ResponseEntity<Object> changeTaskStatus(@RequestBody @Valid ChangeTaskStatusDto dto) {
-        return taskService.changeTaskStatus(dto.getId(), dto.getStatus());
+    public ResponseEntity<Object> changeTaskStatus(@RequestBody @Validated ChangeTaskStatusDto dto) {
+        return taskService.changeTaskStatus(dto);
+    }
+
+    // Obtener tareas por proyecto en su fase actual
+    @PostMapping("/project-tasks")
+    public ResponseEntity<Object> getTasksByProjectAndCurrentPhase(@RequestBody @Validated GetTasksByProjectDto dto) {
+        return taskService.getTasksByProjectAndCurrentPhase(dto);
     }
 
 }
