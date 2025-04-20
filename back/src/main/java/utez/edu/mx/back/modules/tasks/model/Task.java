@@ -30,4 +30,11 @@ public class Task {
     @ManyToOne
     @JoinColumn(name = "phase_id")
     private Phase phase;
+
+    public Task(String name, Boolean completed, Project project, Phase phase) {
+        this.name = name;
+        this.completed = completed;
+        this.project = project;
+        this.phase = phase;
+    }
 }

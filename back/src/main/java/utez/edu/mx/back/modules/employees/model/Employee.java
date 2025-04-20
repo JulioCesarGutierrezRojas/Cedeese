@@ -8,6 +8,7 @@ import org.hibernate.annotations.ColumnDefault;
 import utez.edu.mx.back.modules.projects.model.Project;
 import utez.edu.mx.back.modules.roles.model.Rol;
 
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -38,6 +39,13 @@ public class Employee {
     @ColumnDefault("true")
     private Boolean status;
 
+    @Column(name = "reset_token", columnDefinition = "VARCHAR(5)")
+    private String resetToken;
+
+    @Column(name = "reset_token_expiration")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date resetTokenExpiration;
+
     @ManyToOne
     @JoinColumn(name = "rol_id")
     private Rol rol;
@@ -45,4 +53,14 @@ public class Employee {
     @ManyToMany(mappedBy = "employees", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Project> projects;
+
+    public Employee(String username, String password, String name, String lastname, String email, Boolean status, Rol rol) {
+        this.username = username;
+        this.password = password;
+        this.name = name;
+        this.lastname = lastname;
+        this.email = email;
+        this.status = status;
+        this.rol = rol;
+    }
 }

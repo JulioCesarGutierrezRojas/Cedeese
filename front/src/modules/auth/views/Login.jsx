@@ -1,13 +1,13 @@
+import FormLogin from "../components/FormLogin.jsx";
 import Loader from '../../../components/Loader';
 
 const Login = () => {
     return (
         <>
-            <h1 className='text-tomato'>Este es el Login</h1>
             <Loader isLoading={false} />
+            <FormLogin />
         </>
-        
     )
 }
 
-export default Login
+export default Login;
