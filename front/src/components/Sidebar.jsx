@@ -39,25 +39,25 @@ const Sidebar = ({ role }) => {
                     { role === 'MASTER' && (
                         <>
                             <li className="nav-item">
-                                <a href="/" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
+                                <a href="/customers" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
                                     <Users size={20}/>
                                     <span>Empleados</span>
                                 </a>
                             </li>
                             <li className="nav-item">
-                                <a href="/" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
+                                <a href="/home" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
                                     <Folder size={20}/>
                                     <span>Proyectos</span>
                                 </a>
                             </li>
                             <li className="nav-item">
-                                <a href="/" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
+                                <a href="/fases" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
                                     <PieChart size={20}/>
                                     <span>Fases</span>
                                 </a>
                             </li>
                             <li className="nav-item">
-                                <a href="/" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
+                                <a href="/tasks" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
                                     <FileText size={20}/>
                                     <span>Tareas</span>
                                 </a>
