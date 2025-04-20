@@ -1,58 +1,32 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { showAlert, showConfirmation } from "../../../kernel/alerts.js";
+import { showConfirmation, showWarningToast } from "../../../kernel/alerts.js";
+import { getProjects, closeProject } from "../adapters/controller.js";
+import Loader from "../../../components/Loader";
 
 const RapeView = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [projects, setProjects] = useState([
-    {
-      id: 1,
-      nombre: "Sistema de Gestión",
-      identificador: "SISA",
-      faseActual: "Ejecución",
-      estado: "En progreso"
-    },
-    {
-      id: 2,
-      nombre: "Plataforma Web",
-      identificador: "WEBX",
-      faseActual: "Planeación",
-      estado: "En progreso"
-    },
-    {
-      id: 3,
-      nombre: "Aplicación Móvil",
-      identificador: "APPDEV",
-      faseActual: "Cierre",
-      estado: "Cerrado"
-    },
-    {id: 4,
-      nombre: "Gestión de Proyectos",
-      identificador: "APPDEV",
-      faseActual: "Cierre",
-      estado: "Cerrado"
-    },
-    {id: 5,
-      nombre: "Sistema de Carnicería",
-      identificador: "SISA",
-      faseActual: "Ejecución",
-      estado: "En progreso"
-    },
-    {id: 6,
-      nombre: "Aplicación Móvil",
-      identificador: "APPDEV",
-      faseActual: "Cierre",
-      estado: "Cerrado"
-    },
-  ]);
+  const [projects, setProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  /*useEffect(() => {
-    axios
-      .get("http://tu-api.com/proyectos")
-      .then((response) => setProjects(response.data))
-      .catch((error) => console.error("Error cargando proyectos:", error));
-  }, []);*/
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setIsLoading(true);
+      try {
+        const projectsData = await getProjects();
+        setProjects(projectsData);
+      } catch (error) {
+        showWarningToast({ 
+          title: 'Error al cargar proyectos', 
+          text: error.message 
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   const filteredProjects = projects.filter(
     (project) =>
@@ -61,20 +35,27 @@ const RapeView = () => {
   );
 
   const cerrarProyecto = async (id) => {
+    setIsLoading(true);
     try {
-      await axios.put(`http://tu-api.com/proyectos/${id}/cerrar`);
+      await closeProject(id);
       setProjects((prev) =>
         prev.map((proj) =>
           proj.id === id ? { ...proj, estado: "Cerrado" } : proj
         )
       );
     } catch (error) {
-      console.error("Error cerrando proyecto:", error);
+      showWarningToast({ 
+        title: 'Error al cerrar proyecto', 
+        text: error.message 
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="container mt-4">
+      <Loader isLoading={isLoading} />
       <h1 className="text-center text-primary fw-bold mb-5 mt-5">
         Gestión de Proyectos
       </h1>

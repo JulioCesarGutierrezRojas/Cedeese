@@ -2,31 +2,58 @@
 
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { getTasks, markTaskComplete as markTaskCompleteApi } from '../adapters/controller';
+import { showWarningToast } from '../../../kernel/alerts.js';
+import Loader from '../../../components/Loader';
 
 const ApView = () => {
-  const dummyTasks = [
-    { id: 1, name: 'Diseñar la interfaz', phase: 'Diseño', completed: false },
-    { id: 2, name: 'Implementar autenticación', phase: 'Desarrollo', completed: false },
-    { id: 3, name: 'Pruebas unitarias', phase: 'Testing', completed: true },
-  ];
-
-  // Estado para las tareas; 
+  // Estado para las tareas
   const [tasks, setTasks] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Simulación de carga de datos (aquí se haría el llamado al backend)
+  // Cargar tareas desde el backend
   useEffect(() => {
-    // /* Aquí iría el llamado al backend para obtener las tareas */
-    // Ejemplo: axios.get('/api/tasks').then(response => setTasks(response.data));
-    setTasks(dummyTasks);
+    const fetchTasks = async () => {
+      setIsLoading(true);
+      try {
+        const tasksData = await getTasks();
+        setTasks(tasksData);
+      } catch (error) {
+        showWarningToast({ 
+          title: 'Error al cargar tareas', 
+          text: error.message 
+        });
+        // Fallback a datos de ejemplo si hay error
+        setTasks([
+          { id: 1, name: 'Diseñar la interfaz', phase: 'Diseño', completed: false },
+          { id: 2, name: 'Implementar autenticación', phase: 'Desarrollo', completed: false },
+          { id: 3, name: 'Pruebas unitarias', phase: 'Testing', completed: true },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTasks();
   }, []);
 
-  // Función para marcar tarea como completada (simulación, sin backend)
-  const markTaskComplete = (taskId) => {
-    // /* Aquí se llamaría al backend para actualizar el estado de la tarea */
-    // axios.post(`/api/tasks/${taskId}/complete`).then(...);
-    setTasks(tasks.map(task =>
-      task.id === taskId ? { ...task, completed: true } : task
-    ));
+  // Función para marcar tarea como completada
+  const markTaskComplete = async (taskId) => {
+    setIsLoading(true);
+    try {
+      await markTaskCompleteApi(taskId);
+      // Actualizar el estado local después de la actualización exitosa
+      setTasks(tasks.map(task =>
+        task.id === taskId ? { ...task, completed: true } : task
+      ));
+    } catch (error) {
+      showWarningToast({ 
+        title: 'Error al actualizar tarea', 
+        text: error.message 
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Calcular el progreso del proyecto basado en las tareas completadas
@@ -36,6 +63,7 @@ const ApView = () => {
 
   return (
     <div className="container mt-5">
+      <Loader isLoading={isLoading} />
       <h1 className="text-primary mb-4">Estado del Proyecto</h1>
 
       {/* Barra de progreso */}
