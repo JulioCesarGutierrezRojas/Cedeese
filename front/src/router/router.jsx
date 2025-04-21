@@ -9,7 +9,6 @@ import ApView from "../modules/ap/views/ApView.jsx";
 import Home from "../modules/master/views/Home.jsx";
 import Customers from "../modules/master/views/Customers.jsx";
 import Task from "../modules/master/views/Task.jsx";
-import Fases from "../modules/master/views/Fases.jsx";
 
 const AppRouter = () => {
     const location = useLocation();
