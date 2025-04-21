@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styles from '../../../styles/form-login.module.css';
-import Loader from '../../../components/Loader.jsx';
 import { showSuccessToast, showWarningToast } from '../../../kernel/alerts.js';
 import { sendEmail } from '../controller/controller.js';
 
-const RequestReset = ({ email, setEmail, setStep }) => {
-    const [isLoading, setIsLoading] = useState(false);
+const RequestReset = ({ email, setEmail, setStep, isLoading, setIsLoading }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -23,7 +21,6 @@ const RequestReset = ({ email, setEmail, setStep }) => {
 
     return (
         <>
-            <Loader isLoading={isLoading} />
             <form onSubmit={handleSubmit}>
                 <div className={styles.formGroup}>
                     <label htmlFor="email" className={styles.label}>Correo electrónico</label>

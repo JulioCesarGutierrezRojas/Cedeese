@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { showConfirmation, showWarningToast } from "../../../kernel/alerts.js";
 import { getProjects, closeProject } from "../adapters/controller.js";
 import Loader from "../../../components/Loader";
+import ErrorBoundary from "../../../components/ErrorBoundary";
 
 const RapeView = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,7 +56,9 @@ const RapeView = () => {
 
   return (
     <div className="container mt-4">
-      <Loader isLoading={isLoading} />
+      <ErrorBoundary>
+        <Loader isLoading={isLoading} />
+      </ErrorBoundary>
       <h1 className="text-center text-primary fw-bold mb-5 mt-5">
         Gestión de Proyectos
       </h1>

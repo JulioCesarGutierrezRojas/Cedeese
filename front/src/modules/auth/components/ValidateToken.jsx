@@ -1,18 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styles from '../../../styles/form-login.module.css';
-import Loader from '../../../components/Loader.jsx';
 import { showSuccessToast, showWarningToast } from '../../../kernel/alerts.js';
 import { verifyToken, sendEmail } from '../controller/controller.js';
 
-const ValidateToken = ({ email, token, setToken, setStep, setUser }) => {
-    const [isLoading, setIsLoading] = useState(false);
+const ValidateToken = ({ email, token, setToken, setStep, setUser, isLoading, setIsLoading }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const response = await verifyToken(token);
-            setUser(response?.data); // Guarda info del usuario
+            const response = await verifyToken(token, email);
+            setUser(response); // Guarda info del usuario
             showSuccessToast({ title: 'Éxito', text: response?.message || 'Código verificado correctamente' });
             setStep(3); // Avanza a ChangePassword
         } catch (error) {
@@ -36,7 +34,6 @@ const ValidateToken = ({ email, token, setToken, setStep, setUser }) => {
 
     return (
         <>
-            <Loader isLoading={isLoading} />
             <form onSubmit={handleSubmit}>
                 <div className="mb-3 text-center">
                     <p className="text-muted">
