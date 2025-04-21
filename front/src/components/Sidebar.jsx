@@ -2,9 +2,12 @@ import {useEffect, useState} from "react";
 import {FileText, Folder, LogOut, PieChart, Users} from "react-feather";
 import '../styles/sidebar.css';
 import logo from '../assets/logo-cds.jpg'
+import {useNavigate} from "react-router";
 
 const Sidebar = ({ role }) => {
     const [user, setUser] = useState()
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         const name = localStorage.getItem('user') || 'Usuario'
@@ -12,7 +15,11 @@ const Sidebar = ({ role }) => {
     }, []);
 
     const logout = () => {
-
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('user');
+        localStorage.removeItem('id');
+        navigate('/');
     }
 
     return (
