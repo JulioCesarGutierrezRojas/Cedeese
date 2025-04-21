@@ -37,13 +37,11 @@ const ChangePassword = ({ email, token, setStep, user, isLoading, setIsLoading }
         }
 
         try {
-            // Pass user object with email as fallback
             const response = await changePassword(user || { email }, token, newPassword, confirmPassword);
             showSuccessToast({ title: 'Éxito', text: response?.message || 'Contraseña cambiada correctamente' });
             await navigate('/');
         } catch (error) {
             showWarningToast({ title: 'Error', text: error?.message || 'Error desconocido al cambiar la contraseña' });
-            // If there's an error, allow going back to the previous step
             setStep(2);
         } finally {
             setIsLoading(false);

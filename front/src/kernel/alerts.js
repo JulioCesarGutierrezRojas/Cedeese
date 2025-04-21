@@ -1,5 +1,5 @@
 import Swal from 'sweetalert2';
-import '../styles/sweet-alert-styles.css';
+import '../styles/sweet-alert-styles.css'
 
 export function showAlert(title, message, type = 'success') {
     Swal.fire({
@@ -20,7 +20,7 @@ export function showAlertWithoutCancel(title, message, type = 'success') {
 
 export function showConfirmation(title, message, type = 'warning', confirmButtonText = 'Aceptar', cancelButtonText = 'Cancelar') {
     const appElement = document.getElementById('app');
-    const container = document.querySelector('.container'); // tu div principal
+    const container = document.querySelector('.container');
 
     return Swal.fire({
         title: title,
