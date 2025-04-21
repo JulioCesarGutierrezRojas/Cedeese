@@ -38,21 +38,30 @@ const LoginForm = () => {
              setIsLoading(false);
              return;
          }*/
-    
         try {
             await signIn(email, password);
             const role = localStorage.getItem('role');
-            
-            // Redirección basada en el rol
+
+            // Validar los 4 roles: rape, ap, master y rd
             switch(role) {
+                case 'RAPE':
+                    navigate('/rape-user/');
+                    break;
+                case 'AP':
+                    navigate('/ap-user/');
+                    break;
                 case 'MASTER':
-                    navigate('/dashboard');
+                    navigate('/');
                     break;
                 case 'RD':
                     navigate('/rd');
                     break;
                 default:
-                    navigate('/projects');
+                    showWarningToast({ 
+                        title: 'Rol no válido', 
+                        text: 'No tienes un rol válido para acceder al sistema.' 
+                    });
+                    localStorage.clear(); // Limpiar localStorage si el rol no es válido
             }
         } catch (e) {
             showWarningToast({ title: 'Error al iniciar sesión', text: e.message });

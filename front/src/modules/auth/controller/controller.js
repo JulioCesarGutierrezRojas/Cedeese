@@ -16,14 +16,13 @@ export const signIn = async (email, password) => {
 }
 
 export const sendEmail = async (email) => {
-    const response = await handleRequest('post', '/auth/recover-password', { email });
-  
-    if (response.type !== 'SUCCESS') {
-      throw new Error(response.text || 'Error al enviar correo');
-    }
-  
+    const response = await handleRequest('post', '/auth/recover-password/', { email })
+
+    if (response.type !== 'SUCCESS')
+        throw new Error(response.text);
+
     return response.result.message;
-  };
+}
 
 export const verifyToken = async (token) => {
     const response = await handleRequest('post', '/auth/verify-token/', { token })
