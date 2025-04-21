@@ -76,19 +76,7 @@ const Sidebar = ({ role }) => {
                             <li className="nav-item">
                                 <a href="/" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
                                     <Folder size={20}/>
-                                    <span>Proyecto</span>
-                                </a>
-                            </li>
-                            <li className="nav-item">
-                                <a href="/" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
-                                    <PieChart size={20}/>
-                                    <span>Fases</span>
-                                </a>
-                            </li>
-                            <li className="nav-item">
-                                <a href="/" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
-                                    <FileText size={20}/>
-                                    <span>Tareas</span>
+                                    <span>Proyectos</span>
                                 </a>
                             </li>
                         </>

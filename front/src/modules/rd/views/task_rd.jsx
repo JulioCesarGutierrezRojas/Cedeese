@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../../../components/Sidebar.jsx";
-import { Edit, Trash2, Plus } from "react-feather"; 
+import { Edit, Trash2, Plus, Check } from "react-feather";
 import { useNavigate } from "react-router";
-
 
 const TaskRd = () => {
     const navigate = useNavigate();
@@ -13,13 +12,17 @@ const TaskRd = () => {
         setTareas(tareasGuardadas);
     }, []);
 
-
     const eliminarTarea = (id) => {
         const nuevasTareas = tareas.filter(tarea => tarea.id !== id);
         setTareas(nuevasTareas);
         localStorage.setItem("tareas", JSON.stringify(nuevasTareas));
     };
 
+    const completarTarea = (id) => {
+        // Aquí puedes agregar la lógica para marcar la tarea como completada
+        console.log(`Tarea ${id} completada`);
+        // Por ejemplo, podrías actualizar el estado de la tarea
+    };
 
     const handleCreateTask = () => {
         navigate("/taskform");
@@ -31,7 +34,7 @@ const TaskRd = () => {
             <div className="container mt-4 mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <h2>Tareas asignadas</h2>
-                    <button className="btn btn-success"  onClick={handleCreateTask}>
+                    <button className="btn btn-success" onClick={handleCreateTask}>
                         <Plus size={16} className="me-2" />
                         Crear tarea
                     </button>
@@ -55,6 +58,15 @@ const TaskRd = () => {
                                     <Trash2 size={14} className="me-1" />
                                     Eliminar
                                 </button>
+                                {tarea.fase === "Cierre" && (
+                                    <button
+                                        className="btn btn-success btn-sm"
+                                        onClick={() => completarTarea(tarea.id)}
+                                    >
+                                        <Check size={14} className="me-1" />
+                                        Tarea completada
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}

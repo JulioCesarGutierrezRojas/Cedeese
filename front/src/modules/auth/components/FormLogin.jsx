@@ -52,7 +52,7 @@ const LoginForm = () => {
                     await navigate('/ap-user/');
                     break;
                 case 'MASTER':
-                    await navigate('/');
+                    await navigate('/home');
                     break;
                 case 'RD':
                     await navigate('/rd');

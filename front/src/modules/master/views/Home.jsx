@@ -1,27 +1,138 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { getProjects, createProject } from '../adapters/controllerHome.js';
+import Loader from '../../../components/Loader';
+import ErrorBoundary from '../../../components/ErrorBoundary';
+import { showWarningToast, showSuccessToast } from '../../../kernel/alerts.js';
 
 const Home = () => {
     const [showModal, setShowModal] = useState(false);
+    const [projects, setProjects] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Form state
+    const [projectName, setProjectName] = useState('');
+    const [projectIdentifier, setProjectIdentifier] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [formErrors, setFormErrors] = useState({});
 
     const handleShow = () => setShowModal(true);
-    const handleClose = () => setShowModal(false);
 
-    const projects = [
-        { id: 1, title: "Proyecto 1", identify: "Este es el primer proyecto que se elabora" , fase: "Activo"},
-        { id: 2, title: "Hamburguesa", identify: "Este es el segundo proyecto", fase: "Desactivo" },
-        { id: 3, title: "Pizza", identify: "Este es el tercer proyecto" , fase: "Activo"},
-        { id: 4, title: "Chilaquiles", identify: "Este es cuarto", fase: "Activo" },
-        { id: 5, title: "Huevos Revueltos", identify: "Este es el quinto", fase: "Activo" },
-        { id: 6, title: "Espagueti Verde", identify: "Este es el sexto", fase: "Activo" },
-        { id: 7, title: "Molletes", identify: "Este es el séptimo" , fase: "Activo"},
-        { id: 8, title: "Tacos", identify: "Este es el octavo", fase: "Activo" },
-        { id: 9, title: "Enchiladas", identify: "Este es el noveno", fase: "Activo" },
-        { id: 10, title: "Tamales", identify: "Este es el décimo" , fase: "Activo"},
-        { id: 11, title: "Pan de muerto", identify: "Este es el onceavo" , fase: "Activo"},
-        { id: 12, title: "Pozole", identify: "Este es el doceavo" , fase: "Activo"},
-    ];
+    const handleClose = () => {
+        setShowModal(false);
+        resetForm();
+    };
+
+    const resetForm = () => {
+        setProjectName('');
+        setProjectIdentifier('');
+        setStartDate('');
+        setEndDate('');
+        setFormErrors({});
+    };
+
+    const validateForm = () => {
+        const errors = {};
+        if (!projectName.trim()) errors.name = 'El nombre del proyecto es requerido';
+        if (!projectIdentifier.trim()) errors.identifier = 'El identificador es requerido';
+        if (!startDate) errors.startDate = 'La fecha de inicio es requerida';
+        if (!endDate) errors.endDate = 'La fecha de fin es requerida';
+        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+            errors.dateRange = 'La fecha de inicio no puede ser posterior a la fecha de fin';
+        }
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!validateForm()) return;
+
+        setIsLoading(true);
+        try {
+            const employeeId = localStorage.getItem('id');
+
+            // Format dates to ISO format
+            const formattedStartDate = new Date(startDate).toISOString();
+            const formattedEndDate = new Date(endDate).toISOString();
+
+            const response = await createProject(
+                projectName,
+                projectIdentifier,
+                formattedStartDate,
+                formattedEndDate,
+                employeeId
+            );
+
+            // Check if the project was created successfully
+            if (response.type === 'ERROR') {
+                throw new Error(response.text || 'Error al crear el proyecto');
+            }
+
+            // Add the new project to the projects list
+            const newProject = response.data || {
+                id: Date.now(), // Temporary ID if not provided by API
+                name: projectName,
+                identifier: projectIdentifier,
+                startDate: formattedStartDate,
+                endDate: formattedEndDate,
+                status: true // Assuming new projects are active by default
+            };
+
+            // Update the projects list with the new project
+            setProjects(prevProjects => [newProject, ...prevProjects]);
+
+            // Reset to first page to show the new project
+            setCurrentPage(1);
+
+            showSuccessToast({
+                title: 'Proyecto creado',
+                text: 'El proyecto ha sido creado exitosamente'
+            });
+
+            // Close modal and reset form
+            handleClose();
+        } catch (error) {
+            showWarningToast({
+                title: 'Error al crear proyecto',
+                text: error?.message || 'Error desconocido al crear el proyecto'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            setIsLoading(true);
+            try {
+                const employeeId = localStorage.getItem('id');
+                const role = localStorage.getItem('role');
+                const response = await getProjects(employeeId, role);
+
+                // Check if the response has an error
+                if (response.type === 'ERROR') {
+                    throw new Error(response.text || 'Error al cargar proyectos');
+                }
+
+                // Set the projects from the response data
+                setProjects(response.data || response.result || []);
+            } catch (error) {
+                showWarningToast({
+                    title: 'Error al cargar proyectos',
+                    text: error?.message || 'Error desconocido al cargar proyectos'
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProjects();
+    }, []);
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 9;
@@ -38,6 +149,9 @@ const Home = () => {
 
     return (
         <div className="container">
+            <ErrorBoundary>
+                <Loader isLoading={isLoading} />
+            </ErrorBoundary>
             <div className="container mt-4 d-flex justify-content-between align-items-center">
                 <h1 className="fw-bold">Proyectos</h1>
                 <button className="btn btn-primary" onClick={handleShow}>
@@ -49,24 +163,30 @@ const Home = () => {
                     <tr>
                         <td>
                             <div className="row">
-                                {currentProjects.map(project => (
-                                    <div key={project.id} className="col-md-4 mb-2">
-                                        <div className="card h-100">
-                                            <div className="card-body">
-                                                <h4 className="card-title">{project.title}</h4>
-                                                <p className="card-text">{project.identify}</p>
-                                                <h5 className='fw-bold'>{project.fase}</h5>
+                                {currentProjects.length > 0 ? (
+                                    currentProjects.map(project => (
+                                        <div key={project.id} className="col-md-4 mb-2">
+                                            <div className="card h-100">
+                                                <div className="card-body">
+                                                    <h4 className="card-title">{project.name || project.title}</h4>
+                                                    <p className="card-text">{project.identifier || project.identify}</p>
+                                                    <h5 className='fw-bold'>{project.status ? "Activo" : "Inactivo"}</h5>
+                                                </div>
                                             </div>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center mt-5 col-12">
+                                        <h5 className="text-muted">No se encontraron proyectos</h5>
                                     </div>
-                                ))}
+                                )}
                             </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
 
-            
+
             <nav>
                 <ul className="pagination justify-content-center">
                     <li className={`page-item ${currentPage === 1 && 'disabled'}`}>
@@ -105,26 +225,61 @@ const Home = () => {
                                 ></button>
                             </div>
                             <div className="modal-body">
-                                <form>
+                                <form onSubmit={handleSubmit}>
                                     <div className="mb-3">
-                                        <label htmlFor="projectName" className="form-label">Título:</label>
-                                        <input type="text" className="form-control" id="projectName" />
+                                        <label htmlFor="projectName" className="form-label">Nombre:</label>
+                                        <input 
+                                            type="text" 
+                                            className={`form-control ${formErrors.name ? 'is-invalid' : ''}`} 
+                                            id="projectName"
+                                            value={projectName}
+                                            onChange={(e) => setProjectName(e.target.value)}
+                                        />
+                                        {formErrors.name && <div className="invalid-feedback">{formErrors.name}</div>}
                                     </div>
                                     <div className="mb-3">
-                                        <label htmlFor="identify" className="form-label">Identificador:</label>
-                                        <input type='text' className="form-control" id="identify"></input>
+                                        <label htmlFor="projectIdentifier" className="form-label">Identificador:</label>
+                                        <input 
+                                            type='text' 
+                                            className={`form-control ${formErrors.identifier ? 'is-invalid' : ''}`} 
+                                            id="projectIdentifier"
+                                            value={projectIdentifier}
+                                            onChange={(e) => setProjectIdentifier(e.target.value)}
+                                        />
+                                        {formErrors.identifier && <div className="invalid-feedback">{formErrors.identifier}</div>}
                                     </div>
                                     <div className="mb-3">
-                                        <label htmlFor="projectName" className="form-label">Fase:</label>
-                                        <input type="text" className="form-control" id="projectName" />
+                                        <label htmlFor="startDate" className="form-label">Fecha de inicio:</label>
+                                        <input 
+                                            type="date" 
+                                            className={`form-control ${formErrors.startDate ? 'is-invalid' : ''}`} 
+                                            id="startDate"
+                                            value={startDate}
+                                            onChange={(e) => setStartDate(e.target.value)}
+                                        />
+                                        {formErrors.startDate && <div className="invalid-feedback">{formErrors.startDate}</div>}
                                     </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="endDate" className="form-label">Fecha de fin:</label>
+                                        <input 
+                                            type="date" 
+                                            className={`form-control ${formErrors.endDate ? 'is-invalid' : ''}`} 
+                                            id="endDate"
+                                            value={endDate}
+                                            onChange={(e) => setEndDate(e.target.value)}
+                                        />
+                                        {formErrors.endDate && <div className="invalid-feedback">{formErrors.endDate}</div>}
+                                    </div>
+                                    {formErrors.dateRange && (
+                                        <div className="alert alert-danger">{formErrors.dateRange}</div>
+                                    )}
                                 </form>
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-danger" onClick={handleClose}>
                                     Cancelar
                                 </button>
-                                <button type="submit" className="btn btn-primary">
+                                <button type="button" className="btn btn-primary" onClick={handleSubmit}>
                                     Guardar
                                 </button>
                             </div>
