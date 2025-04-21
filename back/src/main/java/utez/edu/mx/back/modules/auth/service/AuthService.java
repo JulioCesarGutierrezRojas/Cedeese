@@ -83,10 +83,12 @@ public class AuthService {
             UserDetails userDetails = userDetailsService.loadUserByUsername(dto.getEmail());
             String token = jwtProvider.generateToken(userDetails, employee);
 
-            // Create a response map with token and role
+            // Create a response map with token, role, user ID and full name
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
             response.put("role", employee.getRol().getRol().toString());
+            response.put("id", employee.getId());
+            response.put("fullName", employee.getName() + " " + employee.getLastname());
 
             return new ResponseEntity<>(new ApiResponse<>(response, TypesResponse.SUCCESS, "Inicio de sesión exitoso"), HttpStatus.OK);
         } catch (AuthenticationException e) {
