@@ -2,9 +2,12 @@ import {useEffect, useState} from "react";
 import {FileText, Folder, LogOut, PieChart, Users} from "react-feather";
 import '../styles/sidebar.css';
 import logo from '../assets/logo-cds.jpg'
+import {useNavigate} from "react-router";
 
 const Sidebar = ({ role }) => {
     const [user, setUser] = useState()
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         const name = localStorage.getItem('user') || 'Usuario'
@@ -12,7 +15,11 @@ const Sidebar = ({ role }) => {
     }, []);
 
     const logout = () => {
-
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('user');
+        localStorage.removeItem('id');
+        navigate('/');
     }
 
     return (
@@ -63,19 +70,7 @@ const Sidebar = ({ role }) => {
                             <li className="nav-item">
                                 <a href="/" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
                                     <Folder size={20}/>
-                                    <span>Proyecto</span>
-                                </a>
-                            </li>
-                            <li className="nav-item">
-                                <a href="/" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
-                                    <PieChart size={20}/>
-                                    <span>Fases</span>
-                                </a>
-                            </li>
-                            <li className="nav-item">
-                                <a href="/" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
-                                    <FileText size={20}/>
-                                    <span>Tareas</span>
+                                    <span>Proyectos</span>
                                 </a>
                             </li>
                         </>

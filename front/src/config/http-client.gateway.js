@@ -39,14 +39,14 @@ AxiosClient.interceptors.request.use(
         return config;
     },
     (error) => {
-        return Promise.reject(error);
+        return Promise.reject(error || new Error('Error desconocido'));
     }
 );
 
 AxiosClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response) {
+        if (error?.response) {
             const { status, data } = error.response;
             let errorMessage = Object.values(errorMessages).find(msg => msg.title === data.text);
 
@@ -78,7 +78,7 @@ AxiosClient.interceptors.response.use(
                 confirmButtonText: "Aceptar",
             });
         }
-        return Promise.reject(error);
+        return Promise.reject(error || new Error('Error desconocido'));
     }
 );
 
@@ -93,21 +93,34 @@ const httpClient = {
 
 export const handleRequest = async (method, url, payload) => {
     try {
-        const { status, data } = await httpClient[method](url, payload);
+
+        const formattedUrl = url.startsWith('/') ? url : `/${url}`;
+
+        // Log the request for debugging
+        console.log(`Making ${method} request to ${formattedUrl} with payload:`, payload);
+
+        const { status, data } = await httpClient[method](formattedUrl, payload);
+
+        // Log the response for debugging
+        console.log(`Response from ${formattedUrl}:`, { status, data });
+
         return {
             result: status === 200 ? data.result : null,
             metadata: status === 200 ? data.metadata : null,
+            data: data.data || data.result || null, // Try to get data from different possible properties
             type: data.type || 'SUCCESS',
             text: data.text || 'Operación exitosa'
         };
     } catch (error) {
+        console.error(`Error in ${method} request to ${url}:`, error);
         return {
             result: null,
             metadata: null,
+            data: null,
             type: 'ERROR',
-            text: error.response?.data?.text || `Error en solicitud ${method}`
+            text: error?.response?.data?.text || `Error en solicitud ${method}`
         };
     }
 };
-  
+
   export default httpClient;
