@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import styles from '../../../styles/form-login.module.css';
 import logo from '../../../assets/logo-cds.jpg'; 
 import Loader from '../../../components/Loader';
+import ErrorBoundary from '../../../components/ErrorBoundary';
 import { showWarningToast } from '../../../kernel/alerts.js';
 import { signIn } from '../controller/controller.js';
 //import { validateEmail, validatePassword } from '../../../kernel/validations.js';
@@ -45,16 +46,16 @@ const LoginForm = () => {
             // Validar los 4 roles: rape, ap, master y rd
             switch(role) {
                 case 'RAPE':
-                    navigate('/rape-user/');
+                    await navigate('/rape-user/');
                     break;
                 case 'AP':
-                    navigate('/ap-user/');
+                    await navigate('/ap-user/');
                     break;
                 case 'MASTER':
-                    navigate('/');
+                    await navigate('/');
                     break;
                 case 'RD':
-                    navigate('/rd');
+                    await navigate('/rd');
                     break;
                 default:
                     showWarningToast({ 
@@ -64,7 +65,10 @@ const LoginForm = () => {
                     localStorage.clear(); // Limpiar localStorage si el rol no es válido
             }
         } catch (e) {
-            showWarningToast({ title: 'Error al iniciar sesión', text: e.message });
+            showWarningToast({ 
+                title: 'Error al iniciar sesión', 
+                text: e?.message || 'Error desconocido al iniciar sesión'
+            });
         } finally {
             setIsLoading(false);
         }
@@ -76,7 +80,9 @@ const LoginForm = () => {
 
     return (
         <div className={styles.container}>
-            <Loader isLoading={isLoading} />
+            <ErrorBoundary>
+                <Loader isLoading={isLoading} />
+            </ErrorBoundary>
             <div className={styles.leftPanel}>
                 <div className={styles.logoContainer}>
                     <div className={styles.logoWrapper}>

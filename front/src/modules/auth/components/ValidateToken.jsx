@@ -1,22 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styles from '../../../styles/form-login.module.css';
-import Loader from '../../../components/Loader.jsx';
 import { showSuccessToast, showWarningToast } from '../../../kernel/alerts.js';
-import { verifyToken } from '../controller/controller.js'; // si vas a manejar el reenvío
+import { verifyToken, sendEmail } from '../controller/controller.js';
 
-const ValidateToken = ({ email, token, setToken, setStep, setUser }) => {
-    const [isLoading, setIsLoading] = useState(false);
+const ValidateToken = ({ email, token, setToken, setStep, setUser, isLoading, setIsLoading }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const response = await verifyToken(token);
-            setUser(response.data); // Guarda info del usuario
-            showSuccessToast({ title: 'Éxito', text: response.message });
+            const response = await verifyToken(token, email);
+            setUser(response); // Guarda info del usuario
+            showSuccessToast({ title: 'Éxito', text: response?.message || 'Código verificado correctamente' });
             setStep(3); // Avanza a ChangePassword
         } catch (error) {
-            showWarningToast({ title: 'Error', text: error.message });
+            showWarningToast({ title: 'Error', text: error?.message || 'Error desconocido al verificar el código' });
         } finally {
             setIsLoading(false);
         }
@@ -25,10 +23,10 @@ const ValidateToken = ({ email, token, setToken, setStep, setUser }) => {
     const handleResend = async () => {
         setIsLoading(true);
         try {
-            const response = await resendToken(email);
-            showSuccessToast({ title: 'Código reenviado', text: response });
+            const response = await sendEmail(email);
+            showSuccessToast({ title: 'Código reenviado', text: response || 'Código reenviado correctamente' });
         } catch (error) {
-            showWarningToast({ title: 'Error', text: error.message });
+            showWarningToast({ title: 'Error', text: error?.message || 'Error desconocido al reenviar el código' });
         } finally {
             setIsLoading(false);
         }
@@ -36,7 +34,6 @@ const ValidateToken = ({ email, token, setToken, setStep, setUser }) => {
 
     return (
         <>
-            <Loader isLoading={isLoading} />
             <form onSubmit={handleSubmit}>
                 <div className="mb-3 text-center">
                     <p className="text-muted">

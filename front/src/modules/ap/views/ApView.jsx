@@ -5,6 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { getTasks, markTaskComplete as markTaskCompleteApi } from '../adapters/controller';
 import { showWarningToast } from '../../../kernel/alerts.js';
 import Loader from '../../../components/Loader';
+import ErrorBoundary from '../../../components/ErrorBoundary';
 
 const ApView = () => {
   // Estado para las tareas
@@ -21,7 +22,7 @@ const ApView = () => {
       } catch (error) {
         showWarningToast({ 
           title: 'Error al cargar tareas', 
-          text: error.message 
+          text: error?.message || 'Error desconocido al cargar tareas'
         });
         // Fallback a datos de ejemplo si hay error
         setTasks([
@@ -49,7 +50,7 @@ const ApView = () => {
     } catch (error) {
       showWarningToast({ 
         title: 'Error al actualizar tarea', 
-        text: error.message 
+        text: error?.message || 'Error desconocido al actualizar tarea'
       });
     } finally {
       setIsLoading(false);
@@ -63,7 +64,9 @@ const ApView = () => {
 
   return (
     <div className="container mt-5">
-      <Loader isLoading={isLoading} />
+      <ErrorBoundary>
+        <Loader isLoading={isLoading} />
+      </ErrorBoundary>
       <h1 className="text-primary mb-4">Estado del Proyecto</h1>
 
       {/* Barra de progreso */}

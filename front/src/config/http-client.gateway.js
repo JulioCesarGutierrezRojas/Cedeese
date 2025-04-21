@@ -39,14 +39,14 @@ AxiosClient.interceptors.request.use(
         return config;
     },
     (error) => {
-        return Promise.reject(error);
+        return Promise.reject(error || new Error('Error desconocido'));
     }
 );
 
 AxiosClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response) {
+        if (error?.response) {
             const { status, data } = error.response;
             let errorMessage = Object.values(errorMessages).find(msg => msg.title === data.text);
 
@@ -78,7 +78,7 @@ AxiosClient.interceptors.response.use(
                 confirmButtonText: "Aceptar",
             });
         }
-        return Promise.reject(error);
+        return Promise.reject(error || new Error('Error desconocido'));
     }
 );
 
@@ -105,9 +105,9 @@ export const handleRequest = async (method, url, payload) => {
             result: null,
             metadata: null,
             type: 'ERROR',
-            text: error.response?.data?.text || `Error en solicitud ${method}`
+            text: error?.response?.data?.text || `Error en solicitud ${method}`
         };
     }
 };
-  
+
   export default httpClient;
