@@ -1,19 +1,26 @@
-import {handleRequest} from "../../../config/http-client.gateway.js";
+import { handleRequest } from "../../../config/http-client.gateway.js";
 
-export const getProjects = async () => {
-    const response = await handleRequest('get', '/rape/projects/');
+// Obtener todos los proyectos
+export const getProjects = async (employeeId, role) => {
+    // Ensure we're sending the data in the format the API expects
+    // Handle potential null/undefined values and ensure correct types
+    const payload = {
+        employeeId: employeeId ? Number(employeeId) : null,
+        role: role ? role.toUpperCase() : ''
+    };
 
-    if (response.type !== 'SUCCESS')
-        throw new Error(response.text);
+    // Log the payload for debugging
+    console.log("Sending payload to API:", payload);
 
-    return response.result;
-}
+    const response = await handleRequest('post', 'projects/get-all', payload);
 
+    // Asegúrate de que solo retornas el arreglo
+    console.log("Des controller de GET: ", response);
+    // Try to get data from different possible properties
+    return response.data || response.result || [];
+};
+
+// Cerrar un proyecto por ID
 export const closeProject = async (projectId) => {
-    const response = await handleRequest('put', `/rape/projects/${projectId}/close`);
-
-    if (response.type !== 'SUCCESS')
-        throw new Error(response.text);
-
-    return response.result;
-}
+    return await handleRequest('put', 'projects/complete', { id: projectId });
+};

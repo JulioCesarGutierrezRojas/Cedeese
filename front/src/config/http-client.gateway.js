@@ -93,17 +93,30 @@ const httpClient = {
 
 export const handleRequest = async (method, url, payload) => {
     try {
-        const { status, data } = await httpClient[method](url, payload);
+        // Add a leading slash to the URL if it doesn't have one
+        const formattedUrl = url.startsWith('/') ? url : `/${url}`;
+
+        // Log the request for debugging
+        console.log(`Making ${method} request to ${formattedUrl} with payload:`, payload);
+
+        const { status, data } = await httpClient[method](formattedUrl, payload);
+
+        // Log the response for debugging
+        console.log(`Response from ${formattedUrl}:`, { status, data });
+
         return {
             result: status === 200 ? data.result : null,
             metadata: status === 200 ? data.metadata : null,
+            data: data.data || data.result || null, // Try to get data from different possible properties
             type: data.type || 'SUCCESS',
             text: data.text || 'Operación exitosa'
         };
     } catch (error) {
+        console.error(`Error in ${method} request to ${url}:`, error);
         return {
             result: null,
             metadata: null,
+            data: null,
             type: 'ERROR',
             text: error?.response?.data?.text || `Error en solicitud ${method}`
         };
