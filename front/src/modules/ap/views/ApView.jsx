@@ -1,114 +1,221 @@
-//tareas asignadas por fase y poderlas marcar como completadas y estado del proyecto.
-
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { getTasks, markTaskComplete as markTaskCompleteApi } from '../adapters/controller';
+import {
+  markTaskComplete as markTaskCompleteApi,
+  getProjectsByEmployee,
+  getTaskByProject,
+  getLimitedView,
+} from '../adapters/controller';
 import { showWarningToast } from '../../../kernel/alerts.js';
 import Loader from '../../../components/Loader';
-import ErrorBoundary from '../../../components/ErrorBoundary';
 
 const ApView = () => {
-  // Estado para las tareas
-  const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [tasksByProject, setTasksByProject] = useState({});
+  const [limitedViewProjects, setLimitedViewProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState('limited'); // 'limited' or 'full'
 
-  // Cargar tareas desde el backend
   useEffect(() => {
-    const fetchTasks = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const tasksData = await getTasks();
-        setTasks(tasksData);
+        const employeeId = localStorage.getItem('id');
+        console.log("Employee ID from localStorage:", employeeId);
+
+        // Fetch projects data
+        const projectsData = await getProjectsByEmployee(employeeId);
+        console.log("Projects data returned from API:", projectsData);
+
+        // Ensure projectsData is an array before setting it
+        const projectsArray = Array.isArray(projectsData) ? projectsData : [];
+        setProjects(projectsArray);
+
+        // Fetch limited view data for each project
+        const limitedData = [];
+        for (const project of projectsArray) {
+          try {
+            const limitedProject = await getLimitedView(project.id);
+            console.log(`Limited view for project ${project.id}:`, limitedProject);
+
+            if (limitedProject) {
+              limitedData.push(limitedProject);
+            }
+          } catch (limitedError) {
+            console.error(`Error fetching limited view for project ${project.id}:`, limitedError);
+          }
+        }
+
+        // Update limitedViewProjects state
+        setLimitedViewProjects(limitedData);
+
+        // Fetch tasks for each project
+        const tasksData = {};
+        for (const project of projectsArray) {
+          try {
+            // Fetch tasks for this project (passing null for phaseId to get all tasks)
+            const projectTasks = await getTaskByProject(project.id, null);
+            console.log(`Tasks for project ${project.id}:`, projectTasks);
+
+            // Store tasks for this project
+            tasksData[project.id] = Array.isArray(projectTasks) ? projectTasks : [];
+          } catch (taskError) {
+            console.error(`Error fetching tasks for project ${project.id}:`, taskError);
+            tasksData[project.id] = [];
+          }
+        }
+
+        // Update tasksByProject state with all fetched tasks
+        setTasksByProject(tasksData);
+
       } catch (error) {
-        showWarningToast({ 
-          title: 'Error al cargar tareas', 
-          text: error?.message || 'Error desconocido al cargar tareas'
+        showWarningToast({
+          title: 'Error al cargar datos',
+          text: error?.message || 'Error desconocido'
         });
-        // Fallback a datos de ejemplo si hay error
-        setTasks([
-          { id: 1, name: 'Diseñar la interfaz', phase: 'Diseño', completed: false },
-          { id: 2, name: 'Implementar autenticación', phase: 'Desarrollo', completed: false },
-          { id: 3, name: 'Pruebas unitarias', phase: 'Testing', completed: true },
-        ]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchTasks();
+    fetchData();
   }, []);
 
-  // Función para marcar tarea como completada
-  const markTaskComplete = async (taskId) => {
+  const markTaskComplete = async (projectId, taskId) => {
     setIsLoading(true);
     try {
       await markTaskCompleteApi(taskId);
-      // Actualizar el estado local después de la actualización exitosa
-      setTasks(tasks.map(task =>
-        task.id === taskId ? { ...task, completed: true } : task
-      ));
+      // Actualiza solo esa tarea
+      const tasks = tasksByProject[projectId] || [];
+      if (Array.isArray(tasks)) {
+        const updatedTasks = tasks.map(task =>
+            task.id === taskId ? { ...task, completed: true } : task
+        );
+        setTasksByProject({ ...tasksByProject, [projectId]: updatedTasks });
+      }
     } catch (error) {
-      showWarningToast({ 
-        title: 'Error al actualizar tarea', 
-        text: error?.message || 'Error desconocido al actualizar tarea'
+      showWarningToast({
+        title: 'Error al completar tarea',
+        text: error.message
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Calcular el progreso del proyecto basado en las tareas completadas
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(task => task.completed).length;
-  const progress = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  // Toggle view mode function
+  const toggleViewMode = () => {
+    setViewMode(viewMode === 'limited' ? 'full' : 'limited');
+  };
 
   return (
-    <div className="container mt-5">
-      <ErrorBoundary>
+      <div className="container mt-5">
         <Loader isLoading={isLoading} />
-      </ErrorBoundary>
-      <h1 className="text-primary mb-4">Estado del Proyecto</h1>
-
-      {/* Barra de progreso */}
-      <div className="mb-4">
-        <h5>Progreso: {progress}%</h5>
-        <div className="progress">
-          <div
-            className="progress-bar bg-primary"
-            role="progressbar"
-            style={{ width: `${progress}%` }}
-            aria-valuenow={progress}
-            aria-valuemin="0"
-            aria-valuemax="100"
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h1 className="text-primary">Estado de Proyectos y Tareas</h1>
+          <button 
+            className="btn btn-outline-primary" 
+            onClick={toggleViewMode}
           >
-            {progress}%
-          </div>
+            {viewMode === 'limited' ? 'Ver Vista Completa' : 'Ver Vista Limitada'}
+          </button>
         </div>
-      </div>
 
-      {/* Listado de tareas */}
-      <h1>Tareas asignadas</h1>
-      {tasks.map(task => (
-        <div key={task.id} className="card mb-3">
-          <div className={`card-body ${task.completed ? 'bg-secondary text-white' : ''}`}>
-            <h5 className="card-title">{task.name}</h5>
-            <p className="card-text"><strong>Fase:</strong> {task.phase}</p>
-            <p className="card-text">
-              <strong>Estado:</strong> {task.completed ? 'Completada' : 'Pendiente'}
-            </p>
-            {/* Botón para marcar como completada (solo se muestra si la tarea no está completada) */}
-            {!task.completed && (
-              <button
-                onClick={() => markTaskComplete(task.id)}
-                className="btn btn-primary"
-              >
-                Marcar como completada
-              </button>
+        {viewMode === 'limited' ? (
+          // Limited View - Only shows project name and status
+          <div className="row">
+            {limitedViewProjects.length === 0 ? (
+              <p>No hay proyectos asignados.</p>
+            ) : (
+              limitedViewProjects.map(project => (
+                <div key={project.id} className="col-md-6 col-lg-4 mb-4">
+                  <div className="card h-100">
+                    <div className="card-body">
+                      <h5 className="card-title">{project.name}</h5>
+                      <p className="card-text">
+                        Estado:{" "}
+                        <span
+                          className={`badge rounded-pill ${
+                            project.estatus === 'COMPLETADO' ? 'bg-success' : 'bg-warning text-dark'
+                          }`}
+                        >
+                          {project.estatus}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
             )}
           </div>
-        </div>
-      ))}
-    </div>
+        ) : (
+          // Full View - Shows projects with tasks and progress
+          projects.length === 0 ? (
+            <p>No hay proyectos asignados.</p>
+          ) : (
+            projects.map(project => {
+              const projectTasks = tasksByProject[project.id] || [];
+              const total = projectTasks.length;
+              const completed = projectTasks.filter(task => task.completed).length;
+              const progress = total ? Math.round((completed / total) * 100) : 0;
+
+              return (
+                <div key={project.id} className="mb-5">
+                  <h3>{project.name}</h3>
+                  <p>
+                    Estado:{" "}
+                    <span
+                      className={`badge rounded-pill ${
+                        project.estatus === 'COMPLETADO' ? 'bg-success' : 'bg-warning text-dark'
+                      }`}
+                    >
+                      {project.estatus}
+                    </span>
+                  </p>
+
+                  <h6>Progreso del proyecto: {progress}%</h6>
+                  <div className="progress mb-3">
+                    <div
+                      className="progress-bar bg-primary"
+                      role="progressbar"
+                      style={{ width: `${progress}%` }}
+                      aria-valuenow={progress}
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    >
+                      {progress}%
+                    </div>
+                  </div>
+
+                  {projectTasks.length === 0 ? (
+                    <p>No hay tareas en esta fase.</p>
+                  ) : (
+                    projectTasks.map(task => (
+                      <div key={task.id} className="card mb-2">
+                        <div className={`card-body ${task.completed ? 'bg-secondary text-white' : ''}`}>
+                          <h5 className="card-title">{task.name}</h5>
+                          <p className="card-text"><strong>Fase:</strong> {task.phase?.name || 'No definida'}</p>
+                          <p className="card-text">
+                            <strong>Estado:</strong> {task.completed ? 'Completada' : 'Pendiente'}
+                          </p>
+                          {!task.completed && (
+                            <button
+                              onClick={() => markTaskComplete(project.id, task.id)}
+                              className="btn btn-success"
+                            >
+                              Marcar como completada
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              );
+            })
+          )
+        )}
+      </div>
   );
 };
 

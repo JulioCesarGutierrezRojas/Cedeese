@@ -18,18 +18,18 @@ export function showAlertWithoutCancel(title, message, type = 'success') {
     });
 }
 
-export function showConfirmation(title, message, type = 'warning', callback, cancelCallback) {
+export function showConfirmation(title, message, type = 'warning', confirmButtonText = 'Aceptar', cancelButtonText = 'Cancelar') {
     const appElement = document.getElementById('app');
     const container = document.querySelector('.container'); // tu div principal
 
-    Swal.fire({
+    return Swal.fire({
         title: title,
         text: message,
         icon: type,
         showCancelButton: true,
         showCloseButton: false,
-        confirmButtonText: 'Aceptar',
-        cancelButtonText: 'Cancelar',
+        confirmButtonText: typeof confirmButtonText === 'function' ? 'Aceptar' : confirmButtonText,
+        cancelButtonText: typeof cancelButtonText === 'function' ? 'Cancelar' : cancelButtonText,
         target: container || undefined, // esto lo centra dentro del container
         backdrop: true,
         didOpen: () => {
@@ -42,12 +42,6 @@ export function showConfirmation(title, message, type = 'warning', callback, can
                 appElement.removeAttribute('inert');
             }
         },
-    }).then((result) => {
-        if (result.isConfirmed) {
-            callback();
-        } else {
-            cancelCallback && cancelCallback();
-        }
     });
 }
 
@@ -81,52 +75,34 @@ export function showConfirmation(title, message, type = 'warning', callback, can
     });
 }*/
 
-export function showConfirmationWithoutCancel(title, message, type = 'warning', callback, cancelCallback = () => {}) {
-    Swal.fire({
+export function showConfirmationWithoutCancel(title, message, type = 'warning', confirmButtonText = 'Aceptar') {
+    return Swal.fire({
         title: title,
         text: message,
         icon: type,
         showCancelButton: false,
-        confirmButtonText: 'Aceptar',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            callback();
-        } else {
-            cancelCallback && cancelCallback();
-        }
+        confirmButtonText: typeof confirmButtonText === 'function' ? 'Aceptar' : confirmButtonText,
     });
 }
 
-export function showConfirmationAsync(title, message, type = 'warning', callback, cancelCallback) {
-    Swal.fire({
+export function showConfirmationAsync(title, message, type = 'warning', confirmButtonText = 'Aceptar', cancelButtonText = 'Cancelar') {
+    return Swal.fire({
         title: title,
         text: message,
         icon: type,
         showCancelButton: true,
-        confirmButtonText: 'Aceptar',
-        cancelButtonText: 'Cancelar',
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            await callback();
-        } else {
-            cancelCallback && await cancelCallback();
-        }
+        confirmButtonText: typeof confirmButtonText === 'function' ? 'Aceptar' : confirmButtonText,
+        cancelButtonText: typeof cancelButtonText === 'function' ? 'Cancelar' : cancelButtonText,
     });
 }
 
-export function showConfirmationWithoutCancelAsync(title, message, type = 'warning', callback, cancelCallback = async () => {}) {
-    Swal.fire({
+export function showConfirmationWithoutCancelAsync(title, message, type = 'warning', confirmButtonText = 'Aceptar') {
+    return Swal.fire({
         title: title,
         text: message,
         icon: type,
         showCancelButton: false,
-        confirmButtonText: 'Aceptar',
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            await callback();
-        } else {
-            cancelCallback && await cancelCallback();
-        }
+        confirmButtonText: typeof confirmButtonText === 'function' ? 'Aceptar' : confirmButtonText,
     });
 }
 
@@ -138,7 +114,7 @@ const toast = (config) => {
     Swal.mixin({
         toast: true,
         position: 'top-end',
-        iconColor: 'teacher',
+        iconColor: 'white',
         customClass: {
             popup: 'colored-toast'
         },

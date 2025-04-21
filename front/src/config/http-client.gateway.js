@@ -93,7 +93,7 @@ const httpClient = {
 
 export const handleRequest = async (method, url, payload) => {
     try {
-        // Add a leading slash to the URL if it doesn't have one
+
         const formattedUrl = url.startsWith('/') ? url : `/${url}`;
 
         // Log the request for debugging

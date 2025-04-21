@@ -17,7 +17,6 @@ const RapeView = () => {
         const employeeId= localStorage.getItem('id');
         const role= localStorage.getItem('role');
         const projectsData = await getProjects(employeeId, role);
-        console.log("Datos recibidos de getProjects:", projectsData);
         setProjects(projectsData);
       } catch (error) {
         showWarningToast({
