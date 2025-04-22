@@ -29,3 +29,8 @@ export const createProject = async (name, identifier, startDate, endDate, employ
     // Return the entire response object so we can check for errors
     return response;
 };
+
+export const getPhases = async () => {
+    const response = await handleRequest('get', '/phases/');
+    return response;
+};
