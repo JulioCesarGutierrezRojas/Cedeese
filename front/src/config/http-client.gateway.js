@@ -95,15 +95,7 @@ export const handleRequest = async (method, url, payload) => {
     try {
 
         const formattedUrl = url.startsWith('/') ? url : `/${url}`;
-
-        // Log the request for debugging
-        console.log(`Making ${method} request to ${formattedUrl} with payload:`, payload);
-
         const { status, data } = await httpClient[method](formattedUrl, payload);
-
-        // Log the response for debugging
-        console.log(`Response from ${formattedUrl}:`, { status, data });
-
         return {
             result: status === 200 ? data.result : null,
             metadata: status === 200 ? data.metadata : null,
@@ -112,7 +104,6 @@ export const handleRequest = async (method, url, payload) => {
             text: data.text || 'Operación exitosa'
         };
     } catch (error) {
-        console.error(`Error in ${method} request to ${url}:`, error);
         return {
             result: null,
             metadata: null,
