@@ -17,6 +17,8 @@ import utez.edu.mx.back.modules.projects.controller.dto.CreateProjectDto;
 import utez.edu.mx.back.modules.projects.controller.dto.CompleteProjectDto;
 import utez.edu.mx.back.modules.projects.controller.dto.GetProjectByEmployeeDto;
 import utez.edu.mx.back.modules.projects.controller.dto.GetProjectsByRoleDto;
+import utez.edu.mx.back.modules.projects.controller.dto.ProjectLimitedViewDto;
+import utez.edu.mx.back.modules.projects.controller.dto.ProjectLimitedViewResponseDto;
 import utez.edu.mx.back.modules.projects.model.IProjectPhaseRepository;
 import utez.edu.mx.back.modules.projects.model.IProjectRepository;
 import utez.edu.mx.back.modules.projects.model.Project;
@@ -284,5 +286,59 @@ public class ProjectService {
 
         // Devolver el proyecto
         return new ResponseEntity<>(new ApiResponse<>(projects.get(0), TypesResponse.SUCCESS, "Proyecto del empleado"), HttpStatus.OK);
+    }
+
+    /**
+     * Retrieves limited project information (only name and status) for AP role users
+     * @param dto DTO containing the employee ID
+     * @return ResponseEntity with limited project information or error message
+     */
+    @Transactional(readOnly = true)
+    public ResponseEntity<Object> getProjectLimitedView(ProjectLimitedViewDto dto) {
+        // Buscar el empleado por ID
+        Optional<Employee> optionalEmployee = employeeRepository.findById(dto.getEmployeeId());
+        if (optionalEmployee.isEmpty()) {
+            return new ResponseEntity<>(new ApiResponse<>(TypesResponse.ERROR, "El empleado no existe"), HttpStatus.NOT_FOUND);
+        }
+
+        Employee employee = optionalEmployee.get();
+
+        // Verificar que el empleado tenga rol AP
+        TypeRol employeeRole = employee.getRol().getRol();
+        if (employeeRole != TypeRol.AP) {
+            return new ResponseEntity<>(new ApiResponse<>(TypesResponse.ERROR, "Solo los empleados con rol AP pueden usar esta función"), HttpStatus.FORBIDDEN);
+        }
+
+        // Obtener los proyectos del empleado
+        List<Project> projects = repository.findByEmployeeId(dto.getEmployeeId());
+
+        // AP solo debería estar asignado a un proyecto
+        if (projects.isEmpty()) {
+            return new ResponseEntity<>(new ApiResponse<>(TypesResponse.ERROR, "El empleado no está asignado a ningún proyecto"), HttpStatus.NOT_FOUND);
+        }
+
+        // Si se especificó un ID de proyecto, verificar que el empleado esté asignado a ese proyecto
+        if (dto.getProjectId() != null) {
+            boolean isAssigned = projects.stream()
+                    .anyMatch(project -> project.getId().equals(dto.getProjectId()));
+
+            if (!isAssigned) {
+                return new ResponseEntity<>(new ApiResponse<>(TypesResponse.ERROR, "El empleado no está asignado al proyecto especificado"), HttpStatus.FORBIDDEN);
+            }
+
+            // Filtrar para obtener solo el proyecto especificado
+            projects = projects.stream()
+                    .filter(project -> project.getId().equals(dto.getProjectId()))
+                    .toList();
+        }
+
+        // Crear el DTO de respuesta con información limitada (solo nombre y estado)
+        Project project = projects.get(0);
+        ProjectLimitedViewResponseDto responseDto = new ProjectLimitedViewResponseDto(
+                project.getName(),
+                project.getStatus()
+        );
+
+        return new ResponseEntity<>(new ApiResponse<>(responseDto, TypesResponse.SUCCESS, "Información limitada del proyecto"), HttpStatus.OK);
     }
 }

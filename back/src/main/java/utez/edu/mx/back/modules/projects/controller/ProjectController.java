@@ -13,6 +13,8 @@ import utez.edu.mx.back.modules.projects.controller.dto.CreateProjectDto;
 import utez.edu.mx.back.modules.projects.controller.dto.CompleteProjectDto;
 import utez.edu.mx.back.modules.projects.controller.dto.GetProjectByEmployeeDto;
 import utez.edu.mx.back.modules.projects.controller.dto.GetProjectsByRoleDto;
+import utez.edu.mx.back.modules.projects.controller.dto.ProjectLimitedViewDto;
+import utez.edu.mx.back.modules.projects.controller.dto.ProjectLimitedViewResponseDto;
 import utez.edu.mx.back.modules.projects.model.Project;
 import utez.edu.mx.back.modules.projects.service.ProjectService;
 import java.util.List;
@@ -53,5 +55,11 @@ public class ProjectController {
     @PostMapping("/get-by-employee")
     public ResponseEntity<Object> getProjectByEmployee(@RequestBody @Validated GetProjectByEmployeeDto dto) {
         return service.getProjectByEmployee(dto);
+    }
+
+    @Operation(summary = "Obtener vista limitada del proyecto para AP", description = "Recupera solo el nombre y estado del proyecto para usuarios con rol AP")
+    @PostMapping("/get-limited-view")
+    public ResponseEntity<Object> getProjectLimitedView(@RequestBody @Validated ProjectLimitedViewDto dto) {
+        return service.getProjectLimitedView(dto);
     }
 }
