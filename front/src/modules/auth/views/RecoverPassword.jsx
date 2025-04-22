@@ -5,16 +5,22 @@ import ValidateToken from '../components/ValidateToken';
 import ChangePassword from '../components/ChangePassword';
 import styles from '../../../styles/form-login.module.css';
 import logo from '../../../assets/logo-cds.jpg';
+import Loader from '../../../components/Loader';
+import ErrorBoundary from '../../../components/ErrorBoundary';
 
 const RecoverPassword = () => {
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState('');
     const [token, setToken] = useState('');
     const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
 
     return (
         <div className={styles.container}>
+            <ErrorBoundary>
+                <Loader isLoading={isLoading} />
+            </ErrorBoundary>
             <div className={styles.leftPanel}>
                 <div className={styles.logoContainer}>
                     <div className={styles.logoWrapper}>
@@ -67,9 +73,9 @@ const RecoverPassword = () => {
                         ))}
                     </div>
 
-                    {step === 1 && <RequestReset email={email} setEmail={setEmail} setStep={setStep} />}
-                    {step === 2 && <ValidateToken email={email} token={token} setToken={setToken} setStep={setStep} setUser={setUser} />}
-                    {step === 3 && <ChangePassword email={email} token={token} setStep={setStep} user={user} />}
+                    {step === 1 && <RequestReset email={email} setEmail={setEmail} setStep={setStep} isLoading={isLoading} setIsLoading={setIsLoading} />}
+                    {step === 2 && <ValidateToken email={email} token={token} setToken={setToken} setStep={setStep} setUser={setUser} isLoading={isLoading} setIsLoading={setIsLoading} />}
+                    {step === 3 && <ChangePassword email={email} token={token} setStep={setStep} user={user} isLoading={isLoading} setIsLoading={setIsLoading} />}
 
                     <div style={{
                         marginTop: '1.5rem',

@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import styles from '../../../styles/form-login.module.css';
 import { useNavigate } from 'react-router';
-import Loader from '../../../components/Loader.jsx';
 import { showSuccessToast, showWarningToast } from '../../../kernel/alerts.js';
 import { changePassword } from '../controller/controller.js';
 import { validatePassword } from '../../../kernel/validations.js';
 
-const ChangePassword = ({ email, token, setStep, user }) => {
+const ChangePassword = ({ email, token, setStep, user, isLoading, setIsLoading }) => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -39,11 +37,14 @@ const ChangePassword = ({ email, token, setStep, user }) => {
         }
 
         try {
-            const response = await changePassword(user, newPassword, confirmPassword);
-            showSuccessToast({ title: 'Éxito', text: response.message });
-            navigate('/');
+            // Pass user object with email as fallback
+            const response = await changePassword(user || { email }, token, newPassword, confirmPassword);
+            showSuccessToast({ title: 'Éxito', text: response?.message || 'Contraseña cambiada correctamente' });
+            await navigate('/');
         } catch (error) {
-            showWarningToast({ title: 'Error', text: error.message });
+            showWarningToast({ title: 'Error', text: error?.message || 'Error desconocido al cambiar la contraseña' });
+            // If there's an error, allow going back to the previous step
+            setStep(2);
         } finally {
             setIsLoading(false);
         }
@@ -51,8 +52,12 @@ const ChangePassword = ({ email, token, setStep, user }) => {
 
     return (
         <>
-            <Loader isLoading={isLoading} />
             <form onSubmit={handleSubmit}>
+                <div className="mb-3 text-center">
+                    <p className="text-muted">
+                        Cambiando contraseña para <span className="fw-bold" style={{ color: 'var(--tomato)' }}>{email}</span>
+                    </p>
+                </div>
                 <div className={styles.formGroup}>
                     <label htmlFor="newPassword" className={styles.label}>Nueva contraseña</label>
                     <div className={styles.passwordInputGroup}>
@@ -105,9 +110,25 @@ const ChangePassword = ({ email, token, setStep, user }) => {
                     </div>
                 </div>
 
-                <button type="submit" className={styles.submitButton}>
-                    Cambiar contraseña
+                <button 
+                    type="submit" 
+                    className={styles.submitButton}
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Cambiando...' : 'Cambiar contraseña'}
                 </button>
+
+                <div className="text-center mt-3">
+                    <button
+                        type="button"
+                        className="btn btn-link p-0"
+                        onClick={() => setStep(2)}
+                        disabled={isLoading}
+                        style={{ color: 'var(--tomato)', fontSize: '0.9rem' }}
+                    >
+                        <i className="bi bi-arrow-left me-2"></i>Volver al paso anterior
+                    </button>
+                </div>
             </form>
         </>
     );

@@ -1,43 +1,52 @@
-import {handleRequest} from "../../../config/http-client.gateway.js";
+import { handleRequest } from "../../../config/http-client.gateway.js";
 
 // controller.js
 // En tu controller.js
 export const signIn = async (email, password) => {
-    const response = await handleRequest('post', '/auth/signin/', { email, password });
+    const response = await handleRequest('post', '/auth/signin', { email, password });
 
     if (response.type !== 'SUCCESS')
         throw new Error(response.text);
 
-    const {token, role, user} = response.result;
+    const { token, role, fullName, id } = response.result;
     localStorage.setItem('token', token);
     localStorage.setItem('role', role);
-    localStorage.setItem('user', user);
+    localStorage.setItem('user', fullName);
+    localStorage.setItem('id', id);
     return true;
 }
 
 export const sendEmail = async (email) => {
-    const response = await handleRequest('post', '/auth/recover-password/', { email })
+    const response = await handleRequest('post', '/auth/recover-password', { email })
 
     if (response.type !== 'SUCCESS')
         throw new Error(response.text);
 
-    return response.result.message;
+    return response.result?.message || 'Código enviado correctamente';
 }
 
-export const verifyToken = async (token) => {
-    const response = await handleRequest('post', '/auth/verify-token/', { token })
+export const verifyToken = async (token, email) => {
+    const response = await handleRequest('post', '/auth/verify-token', { token, email })
 
     if (response.type !== 'SUCCESS')
         throw new Error(response.text);
 
-    return response.result;
+    return response.result || { message: 'Código verificado correctamente' };
 }
 
-export const changePassword = async (user,  new_password, confirm_password) => {
-    const response = await handleRequest('post', '/auth/change-password/', { user, new_password, confirm_password })
+export const changePassword = async (user, token, password, confirmPassword) => {
+    // Ensure all required parameters are included in the request
+    const payload = {
+        userId: user.id || user.userId,
+        email: user.email,
+        token,
+        password,
+        confirmPassword
+    };
+    const response = await handleRequest('post', '/auth/change-password', payload)
 
     if (response.type !== 'SUCCESS')
         throw new Error(response.text);
 
-    return response.result;
+    return response.result || { message: 'Contraseña cambiada correctamente' };
 }
