@@ -9,6 +9,7 @@ import Home from "../modules/master/views/Home.jsx";
 import Customers from "../modules/master/views/Customers.jsx";
 import Task from "../modules/master/views/Task.jsx";
 import TaskForm from "../modules/rd/views/create_task.jsx";
+import Logbook from "../modules/master/views/Logbook.jsx";
 
 const AppRouter = () => {
     const location = useLocation();
@@ -25,9 +26,10 @@ const AppRouter = () => {
                     <Route path="/create-task" element={<TaskForm/>}/>
                     <Route path="/ap-user" element={<ApView />} />
                     <Route path="/rape-user" element={<RapeView/>}/>
-                    <Route path="/home" element={<Home/>}/>,
-                    <Route path="/customers" element={<Customers/>}/>,
+                    <Route path="/home" element={<Home/>}/>
+                    <Route path="/customers" element={<Customers/>}/>
                     <Route path="/tasks" element={<Task/>}/>
+                    <Route path="/logbook" element={<Logbook/>}/>
                 </Routes>
             </div>
         </>

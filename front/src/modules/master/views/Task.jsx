@@ -1,28 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getAllTask , createTask } from '../controller/controllerTask'; // ajusta la ruta si es necesario
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { data } from 'react-router';
 
 const Task = () => {
-    const [tasks, setTasks] = useState([
-        { id: 1, title:'Supervisar empleados', fase: "Do the dishes", status: 'Activo' },
-        { id: 2, title:'Supervisar empleados', fase: "Finish homework", status: 'Activo' },
-        { id: 3, title:'Supervisar empleados', fase: "Read a book", status: 'Activo' },
-        { id: 4, title:'Supervisar tareas', fase: "Go for a run", status: 'Activo' },
-        { id: 5, title:'Supervisar empleados', fase: "Write a blog post", status: 'Activo' },
-        { id: 6, title:'Supervisar empleados', fase: "Cook dinner", status: 'Activo' },
-        { id: 7, title:'Supervisar empleados', fase: "Call mom", status: 'Desactivo' },
-    ]);
-
+    const [tasks, setTasks] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [showModal, setShowModal] = useState(false);
-    const [newTask, setNewTask] = useState({ title: '', fase: '', status: 'Activo' });
+    const [newTask, setNewTask] = useState({ name: '', phase_id: '', project_id: '', completed: '' });
     const itemsPerPage = 3;
 
+    useEffect(() => {
+        const fetchTask = async () => {
+            setIsLoading(true);
+            try {
+                const response = await getAllTask();
+                console.log('response', response);
+                console.log(response.data);
+                if (response && response.data) {
+                    setTasks(response.data);
+                }
+            } catch (error) {
+                showWarningToast({
+                    title: 'Error al cargar las tareas',
+                    text: error?.message || 'Error desconocido al cargar las tareas'
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchTask();
+    }, []);
+
+    useEffect(() => {
+        console.log('✅ tasks actualizado:', tasks);
+    }, [tasks]);
+    
+
     const filteredTasks = tasks.filter(task =>
-        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.fase.toLowerCase().includes(searchTerm.toLowerCase())
+        (task.title?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||
+        (task.fase?.toLowerCase().includes(searchTerm.toLowerCase()) || '')
     );
+    
 
     const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -34,14 +56,22 @@ const Task = () => {
         }
     };
 
-    const handleAddTask = () => {
+    const handleAddTask = async () => {
         if (newTask.title && newTask.fase) {
-            const newId = tasks.length ? tasks[tasks.length - 1].id + 1 : 1;
-            setTasks([...tasks, { ...newTask, id: newId }]);
-            setNewTask({ title: '', fase: '', status: 'Activo' });
-            setShowModal(false);
+            
+            const createdTask = await createTask(newTask);
+    
+            if (createdTask) {
+                const updatedTasks = await getAllTask(); // actualiza desde el backend
+                setTasks(updatedTasks);
+                setNewTask({ title: '', fase: '', status: 'Activo' });
+                setShowModal(false);
+            } else {
+                alert("Hubo un error al crear la tarea.");
+            }
         }
     };
+    
 
     return (
         <div className="container mt-2">
@@ -64,19 +94,20 @@ const Task = () => {
                 </div>
             </div>
 
-            {currentTasks.map(task => (
-                <div className="card mb-4" key={task.id}>
-                    <div className="card-header">{task.title}</div>
-                    <div className="card-body">
-                        <blockquote className="blockquote mb-2">
-                            <p>{task.fase}</p>
-                            <footer className="blockquote-footer">
-                                <cite>{task.status}</cite>
-                            </footer>
-                        </blockquote>
-                    </div>
+            {tasks.map(task => (
+            <div className="card mb-4" key={task.id}>
+                <div className="card-header fw-bold">{task.name}</div>
+                <div className="card-body">
+                    <blockquote className="blockquote mb-2">
+                        <p>Fase: {task.phase.phase}</p>
+                        <footer className="blockquote-footer">
+                            <cite>{task.completed?'Completo':'Incompleto'}</cite>
+                        </footer>
+                    </blockquote>
                 </div>
-            ))}
+            </div>
+        ))}
+
 
             <nav>
                 <ul className="pagination justify-content-center">
