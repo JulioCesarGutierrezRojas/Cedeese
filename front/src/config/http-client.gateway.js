@@ -39,14 +39,14 @@ AxiosClient.interceptors.request.use(
         return config;
     },
     (error) => {
-        return Promise.reject(error || new Error('Error desconocido'));
+        return Promise.reject(error);
     }
 );
 
 AxiosClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error?.response) {
+        if (error.response) {
             const { status, data } = error.response;
             let errorMessage = Object.values(errorMessages).find(msg => msg.title === data.text);
 
@@ -78,7 +78,7 @@ AxiosClient.interceptors.response.use(
                 confirmButtonText: "Aceptar",
             });
         }
-        return Promise.reject(error || new Error('Error desconocido'));
+        return Promise.reject(error);
     }
 );
 
@@ -88,18 +88,15 @@ const httpClient = {
     postBlob: (endpoint, payload) => AxiosClient.post(endpoint, payload, { responseType: 'blob' }),
     put: (endpoint, payload) => AxiosClient.put(endpoint, payload),
     patch: (endpoint, payload) => AxiosClient.patch(endpoint, payload),
-    delete: (endpoint) => AxiosClient.delete(endpoint),
+    delete: (endpoint, payload) => AxiosClient.delete(endpoint, { data: payload }),
 };
 
 export const handleRequest = async (method, url, payload) => {
     try {
-
-        const formattedUrl = url.startsWith('/') ? url : `/${url}`;
-        const { status, data } = await httpClient[method](formattedUrl, payload);
+        const { status, data } = await httpClient[method](url, payload);
         return {
             result: status === 200 ? data.result : null,
             metadata: status === 200 ? data.metadata : null,
-            data: data.data || data.result || null, // Try to get data from different possible properties
             type: data.type || 'SUCCESS',
             text: data.text || 'Operación exitosa'
         };
@@ -107,39 +104,10 @@ export const handleRequest = async (method, url, payload) => {
         return {
             result: null,
             metadata: null,
-            data: null,
             type: 'ERROR',
-            text: error?.response?.data?.text || `Error en solicitud ${method}`
+            text: error.text || `Error en solicitud ${method}`
         };
     }
 };
 
-export const handleRequest2 = async (method, url, payload) => {
-    try {
-        const formattedUrl = url.startsWith('/') ? url : `/${url}`;
-
-        // 👇 Diferenciar DELETE porque requiere 'data' como body
-        const axiosConfig = method === 'delete' ? { data: payload } : payload;
-
-        const { status, data } = await httpClient[method](formattedUrl, axiosConfig);
-
-        return {
-            result: status === 200 ? data.result : null,
-            metadata: status === 200 ? data.metadata : null,
-            data: data.data || data.result || null,
-            type: data.type || 'SUCCESS',
-            text: data.text || 'Operación exitosa'
-        };
-    } catch (error) {
-        return {
-            result: null,
-            metadata: null,
-            data: null,
-            type: 'ERROR',
-            text: error?.response?.data?.text || `Error en solicitud ${method}`
-        };
-    }
-};
-
-
-  export default httpClient;
+export default httpClient;

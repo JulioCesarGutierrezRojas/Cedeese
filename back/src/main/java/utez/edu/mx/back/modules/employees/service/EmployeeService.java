@@ -155,8 +155,6 @@ public class EmployeeService {
 
     @Transactional(rollbackFor = SQLException.class)
     public ResponseEntity<Object> deleteEmployee(DeleteEmployeeDto dto) {
-        System.out.println("dto: ", dto);
-        
         // Buscar empleado por ID
         Optional<Employee> optionalEmployee = repository.findById(dto.getId());
         if (optionalEmployee.isEmpty()) {
