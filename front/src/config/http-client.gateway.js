@@ -114,4 +114,32 @@ export const handleRequest = async (method, url, payload) => {
     }
 };
 
+export const handleRequest2 = async (method, url, payload) => {
+    try {
+        const formattedUrl = url.startsWith('/') ? url : `/${url}`;
+
+        // 👇 Diferenciar DELETE porque requiere 'data' como body
+        const axiosConfig = method === 'delete' ? { data: payload } : payload;
+
+        const { status, data } = await httpClient[method](formattedUrl, axiosConfig);
+
+        return {
+            result: status === 200 ? data.result : null,
+            metadata: status === 200 ? data.metadata : null,
+            data: data.data || data.result || null,
+            type: data.type || 'SUCCESS',
+            text: data.text || 'Operación exitosa'
+        };
+    } catch (error) {
+        return {
+            result: null,
+            metadata: null,
+            data: null,
+            type: 'ERROR',
+            text: error?.response?.data?.text || `Error en solicitud ${method}`
+        };
+    }
+};
+
+
   export default httpClient;

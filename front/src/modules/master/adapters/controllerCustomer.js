@@ -1,4 +1,4 @@
-import { handleRequest } from "../../../config/http-client.gateway.js";
+import { handleRequest2 ,handleRequest} from "../../../config/http-client.gateway.js";
 
 // Obtener todos los empleados
 export const getEmployees = async () => {
@@ -36,8 +36,8 @@ export const updateEmployee = async (id, employeeData) => {
     return response;
 };
 
-// Eliminar un empleado
+
 export const deleteEmployee = async (id) => {
-    const response = await handleRequest('delete', `/employees/${id}`);
+    const response = await handleRequest('delete', '/employees/',{id});
     return response;
 };

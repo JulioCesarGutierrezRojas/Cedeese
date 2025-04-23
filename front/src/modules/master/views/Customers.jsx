@@ -15,25 +15,26 @@ const Customers = () => {
     const [formErrors, setFormErrors] = useState({});
 
     useEffect(() => {
-        const fetchEmployees = async () => {
-            setIsLoading(true);
-            try {
-                const response = await getEmployees();
-                if (response && response.data) {
-                    setEmployees(response.data);
-                }
-            } catch (error) {
-                showWarningToast({
-                    title: 'Error al cargar empleados',
-                    text: error?.message || 'Error desconocido al cargar los empleados'
-                });
-            } finally {
-                setIsLoading(false);
-            }
-        };
+        
         fetchEmployees();
     }, []);
 
+    const fetchEmployees = async () => {
+        setIsLoading(true);
+        try {
+            const response = await getEmployees();
+            if (response && response.data) {
+                setEmployees(response.data);
+            }
+        } catch (error) {
+            showWarningToast({
+                title: 'Error al cargar empleados',
+                text: error?.message || 'Error desconocido al cargar los empleados'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
     const validateForm = (employee) => {
         const errors = {};
         if (!employee.username?.trim()) errors.username = 'El username es requerido';
@@ -99,7 +100,8 @@ const Customers = () => {
         setIsLoading(true);
         try {
             const response = await updateEmployee(selectedEmployee.id, selectedEmployee);
-            if (response && response.data) {
+            console.log("response " , response)
+            if (response) {
                 setEmployees(employees.map(emp =>
                     emp.id === selectedEmployee.id ? response.data : emp
                 ));
@@ -110,7 +112,9 @@ const Customers = () => {
 
                 const modalElement = document.getElementById('employeeModal');
                 const modalInstance = Modal.getInstance(modalElement);
+                
                 if (modalInstance) modalInstance.hide();
+                fetchEmployees();
             } else {
                 throw new Error(response?.text || 'No se pudo actualizar el empleado');
             }
@@ -135,12 +139,14 @@ const Customers = () => {
                 setIsLoading(true);
                 try {
                     const response = await deleteEmployee(id);
+                    
                     if (response) {
                         setEmployees(employees.filter(emp => emp.id !== id));
                         showSuccessToast({
                             title: 'Empleado eliminado',
                             text: 'El empleado ha sido eliminado exitosamente'
                         });
+
                     }
                 } catch (error) {
                     showWarningToast({
@@ -161,11 +167,22 @@ const Customers = () => {
 
     const handleEditClick = (employee) => {
         setSelectedEmployee(employee);
+        
         setFormErrors({});
         const modalElement = document.getElementById('employeeModal');
         const modalInstance = new Modal(modalElement);
         modalInstance.show();
     };
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 9;
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentEmployees = employees.slice(indexOfFirstItem, indexOfLastItem);
+
+    const totalPages = Math.ceil(employees.length / itemsPerPage);
+    
 
     return (
         <div className="container mt-4">
@@ -187,9 +204,9 @@ const Customers = () => {
                 </tr>
                 </thead>
                 <tbody>
-                {employees.map(emp => (
+                {currentEmployees.map(emp => (
                     <tr key={emp.id}>
-                        <td>{emp.name} {emp.surname || emp.lastname}</td>
+                        <td>{emp.name } {emp.surname || emp.lastname}</td>
                         <td>{emp.email}</td>
                         <td>
                             <button
@@ -269,11 +286,18 @@ const Customers = () => {
 
                                     <div className="mb-2">
                                         <label className="form-label"><strong>Rol:</strong></label>
-                                        <input
-                                            className={`form-control ${formErrors.rol ? 'is-invalid' : ''}`}
-                                            value={typeof selectedEmployee.rol === 'object' ? selectedEmployee.rol.id || '' : selectedEmployee.rol}
-                                            onChange={(e) => setSelectedEmployee({ ...selectedEmployee, rol: e.target.value })}
-                                        />
+                                        <select
+                                            className="form-control"
+                                            value={selectedEmployee.rol.id}
+                                            onChange={(e) => setSelectedEmployee({ ...selectedEmployee, rol: parseInt(e.target.value) })}
+                                        >
+                                            <option value={0}>{selectedEmployee.rol.rol}</option>
+                                            <option value={1}>Master</option>
+                                            <option value={2}>rape</option>
+                                            <option value={3}>rd</option>
+                                            <option value={4}>ap</option>
+                                        </select>
+
                                         {formErrors.rol && <div className="invalid-feedback">{formErrors.rol}</div>}
                                     </div>
                                 </>
@@ -340,14 +364,18 @@ const Customers = () => {
                                     </div>
                                     <div className="mb-2">
                                         <label className="form-label">Rol:</label>
-                                        <input
-                                            type="text"
-                                            className={`form-control ${formErrors.rol ? 'is-invalid' : ''}`}
+                                        <select
+                                            className="form-control"
                                             value={newEmployee.rol}
-                                            onChange={(e) =>
-                                                setNewEmployee({ ...newEmployee, rol: e.target.value })
-                                            }
-                                        />
+                                            onChange={(e) => setNewEmployee({ ...newEmployee, rol: parseInt(e.target.value) })}
+                                        >
+                                            <option value="">Seleccionar rol</option>
+                                            <option value={1}>Master</option>
+                                            <option value={2}>rape</option>
+                                            <option value={3}>rd</option>
+                                            <option value={4}>ap</option>
+                                        </select>
+
                                         {formErrors.rol && <div className="invalid-feedback">{formErrors.rol}</div>}
                                     </div>
                                     <div className="mb-2">
@@ -384,6 +412,28 @@ const Customers = () => {
                     </div>
                 </div>
             )}
+            <nav className="d-flex justify-content-center">
+            <ul className="pagination">
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}>
+                    Anterior
+                </button>
+                </li>
+                {Array.from({ length: totalPages }, (_, i) => (
+                <li key={i} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
+                    <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
+                    {i + 1}
+                    </button>
+                </li>
+                ))}
+                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}>
+                    Siguiente
+                </button>
+                </li>
+            </ul>
+            </nav>
+
         </div>
     );
 };

@@ -57,12 +57,6 @@ const Sidebar = ({ role }) => {
                                     <span>Proyectos</span>
                                 </a>
                             </li>
-                            <li className="nav-item">
-                                <a href="/tasks" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
-                                    <FileText size={20}/>
-                                    <span>Tareas</span>
-                                </a>
-                            </li>
                         </>
                     )}
                     { role === 'RAPE' && (
