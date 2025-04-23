@@ -12,17 +12,13 @@ export const getLogActivities = async () => {
 
 export const createProject = async (name, identifier, startDate, endDate, employeeId) => {
     try {
-        const response = await handleRequest({
-            endpoint: "/projects/",
-            method: "POST",
-            data: {
+        const response = await handleRequest("post","/projects/", {
                 name,
                 identifier,
                 startDate,
                 endDate,
                 employeeId
-            }
-        });
+            });
         return response;
     } catch (error) {
         console.error("Error al crear el proyecto:", error);
@@ -32,14 +28,8 @@ export const createProject = async (name, identifier, startDate, endDate, employ
 
 export const getProjects = async (employeeId, role) => {
     try {
-        const endpoint = role === "ADMIN" 
-            ? "/projects/" 
-            : `/projects/employee/${employeeId}`;
-
-        const response = await handleRequest({
-            endpoint,
-            method: "GET",
-        });
+        const response = await handleRequest("post", "/projects/get-all", { employeeId, role });
+        console.log('This is the rsponse for porjects', response);
         return response;
     } catch (error) {
         console.error("Error al obtener los proyectos:", error);
@@ -49,10 +39,7 @@ export const getProjects = async (employeeId, role) => {
 
 export const getPhases = async () => {
     try {
-        const response = await handleRequest({
-            endpoint: "/phases/",
-            method: "GET",
-        });
+        const response = await handleRequest("get", "/phases/");
         return response;
     } catch (error) {
         console.error("Error al obtener las fases:", error);
