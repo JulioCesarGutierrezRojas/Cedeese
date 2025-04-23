@@ -1,222 +1,103 @@
-import React, { useState, useEffect } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import {
-  markTaskComplete as markTaskCompleteApi,
-  getProjectsByEmployee,
-  getTaskByProject,
-  getLimitedView,
-} from '../adapters/controller';
+import React, { useEffect, useState } from 'react';
+import { getProjectsByEmployee, getTaskByProject, markTaskCompleted } from '../adapters/controller.js';
 import { showWarningToast } from '../../../kernel/alerts.js';
-import Loader from '../../../components/Loader';
+import Loader from '../../../components/Loader.jsx';
 
-const ApView = () => {
+const ProjectsAndTasksView = () => {
   const [projects, setProjects] = useState([]);
   const [tasksByProject, setTasksByProject] = useState({});
-  const [limitedViewProjects, setLimitedViewProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('limited'); // 'limited' or 'full'
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadData = async () => {
       setIsLoading(true);
       try {
         const employeeId = localStorage.getItem('id');
-        console.log("Employee ID from localStorage:", employeeId);
-
-        // Fetch projects data
         const projectsData = await getProjectsByEmployee(employeeId);
-        console.log("Projects data returned from API:", projectsData);
+        setProjects(projectsData);
 
-        // Ensure projectsData is an array before setting it
-        const projectsArray = Array.isArray(projectsData) ? projectsData : [];
-        setProjects(projectsArray);
-
-        // Fetch limited view data for each project
-        const limitedData = [];
-        for (const project of projectsArray) {
-          try {
-            const limitedProject = await getLimitedView(project.id);
-            console.log(`Limited view for project ${project.id}:`, limitedProject);
-
-            if (limitedProject) {
-              limitedData.push(limitedProject);
-            }
-          } catch (limitedError) {
-            console.error(`Error fetching limited view for project ${project.id}:`, limitedError);
-          }
+        const allTasks = {};
+        for (const project of projectsData) {
+          const tasks = await getTaskByProject(project.id, null); // null para traer todas las fases
+          allTasks[project.id] = tasks;
         }
-
-        // Update limitedViewProjects state
-        setLimitedViewProjects(limitedData);
-
-        // Fetch tasks for each project
-        const tasksData = {};
-        for (const project of projectsArray) {
-          try {
-            // Fetch tasks for this project (passing null for phaseId to get all tasks)
-            const projectTasks = await getTaskByProject(project.id, null);
-            console.log(`Tasks for project ${project.id}:`, projectTasks);
-
-            // Store tasks for this project
-            tasksData[project.id] = Array.isArray(projectTasks) ? projectTasks : [];
-          } catch (taskError) {
-            console.error(`Error fetching tasks for project ${project.id}:`, taskError);
-            tasksData[project.id] = [];
-          }
-        }
-
-        // Update tasksByProject state with all fetched tasks
-        setTasksByProject(tasksData);
-
+        setTasksByProject(allTasks);
       } catch (error) {
         showWarningToast({
-          title: 'Error al cargar datos',
-          text: error?.message || 'Error desconocido'
+          title: 'Error',
+          text: error.message || 'Algo salió mal al cargar los datos',
         });
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchData();
+    loadData();
   }, []);
 
-  const markTaskComplete = async (projectId, taskId) => {
+  const handleMarkComplete = async (projectId, taskId) => {
     setIsLoading(true);
     try {
-      await markTaskCompleteApi(taskId);
-      // Actualiza solo esa tarea
-      const tasks = tasksByProject[projectId] || [];
-      if (Array.isArray(tasks)) {
-        const updatedTasks = tasks.map(task =>
-            task.id === taskId ? { ...task, completed: true } : task
-        );
-        setTasksByProject({ ...tasksByProject, [projectId]: updatedTasks });
-      }
+      await markTaskCompleted(taskId);
+      const updatedTasks = tasksByProject[projectId].map(task =>
+          task.id === taskId ? { ...task, completed: true } : task
+      );
+      setTasksByProject({ ...tasksByProject, [projectId]: updatedTasks });
     } catch (error) {
       showWarningToast({
-        title: 'Error al completar tarea',
-        text: error.message
+        title: 'Error',
+        text: error.message || 'No se pudo completar la tarea',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Toggle view mode function
-  const toggleViewMode = () => {
-    setViewMode(viewMode === 'limited' ? 'full' : 'limited');
-  };
-
   return (
       <div className="container mt-5">
         <Loader isLoading={isLoading} />
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h1 className="text-primary">Estado de Proyectos y Tareas</h1>
-          <button 
-            className="btn btn-outline-primary" 
-            onClick={toggleViewMode}
-          >
-            {viewMode === 'limited' ? 'Ver Vista Completa' : 'Ver Vista Limitada'}
-          </button>
-        </div>
+        <h2 className="mb-4 text-primary">Proyectos y Tareas</h2>
 
-        {viewMode === 'limited' ? (
-          // Limited View - Only shows project name and status
-          <div className="row">
-            {limitedViewProjects.length === 0 ? (
-              <p>No hay proyectos asignados.</p>
-            ) : (
-              limitedViewProjects.map(project => (
-                <div key={project.id} className="col-md-6 col-lg-4 mb-4">
-                  <div className="card h-100">
-                    <div className="card-body">
-                      <h5 className="card-title">{project.name}</h5>
-                      <p className="card-text">
-                        Estado:{" "}
-                        <span
-                          className={`badge rounded-pill ${
-                            project.estatus === 'COMPLETADO' ? 'bg-success' : 'bg-warning text-dark'
-                          }`}
-                        >
-                          {project.estatus}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        ) : (
-          // Full View - Shows projects with tasks and progress
-          projects.length === 0 ? (
-            <p>No hay proyectos asignados.</p>
-          ) : (
-            projects.map(project => {
-              const projectTasks = tasksByProject[project.id] || [];
-              const total = projectTasks.length;
-              const completed = projectTasks.filter(task => task.completed).length;
-              const progress = total ? Math.round((completed / total) * 100) : 0;
-
-              return (
-                <div key={project.id} className="mb-5">
-                  <h3>{project.name}</h3>
-                  <p>
-                    Estado:{" "}
-                    <span
-                      className={`badge rounded-pill ${
-                        project.estatus === 'COMPLETADO' ? 'bg-success' : 'bg-warning text-dark'
-                      }`}
-                    >
-                      {project.estatus}
-                    </span>
-                  </p>
-
-                  <h6>Progreso del proyecto: {progress}%</h6>
-                  <div className="progress mb-3">
-                    <div
-                      className="progress-bar bg-primary"
-                      role="progressbar"
-                      style={{ width: `${progress}%` }}
-                      aria-valuenow={progress}
-                      aria-valuemin="0"
-                      aria-valuemax="100"
-                    >
-                      {progress}%
-                    </div>
-                  </div>
-
-                  {projectTasks.length === 0 ? (
-                    <p>No hay tareas en esta fase.</p>
-                  ) : (
-                    projectTasks.map(task => (
-                      <div key={task.id} className="card mb-2">
-                        <div className={`card-body ${task.completed ? 'bg-secondary text-white' : ''}`}>
-                          <h5 className="card-title">{task.name}</h5>
-                          <p className="card-text"><strong>Fase:</strong> {task.phase?.name || 'No definida'}</p>
-                          <p className="card-text">
-                            <strong>Estado:</strong> {task.completed ? 'Completada' : 'Pendiente'}
-                          </p>
-                          {!task.completed && (
-                            <button
-                              onClick={() => markTaskComplete(project.id, task.id)}
-                              className="btn btn-success"
-                            >
-                              Marcar como completada
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              );
-            })
-          )
+        {/* 📦 CARD de aviso cuando no hay proyectos */}
+        {!isLoading && projects.length === 0 && (
+            <div className="card border-grey mb-4">
+              <div className="card-header bg-primary text-white">Atención</div>
+              <div className="card-body">
+                <p className="card-text">El empleado no está asignado a ningún proyecto.</p>
+              </div>
+            </div>
         )}
+
+        {projects.length > 0 &&
+            projects.map(project => (
+                <div key={project.id} className="mb-4">
+                  <h4>{project.name}</h4>
+                  <ul className="list-group">
+                    {(tasksByProject[project.id] || []).map(task => (
+                        <li
+                            key={task.id}
+                            className={`list-group-item d-flex justify-content-between align-items-center ${
+                                task.completed ? 'list-group-item-success' : ''
+                            }`}
+                        >
+                          <div>
+                            <strong>{task.name}</strong> – Fase: {task.phase?.name || 'Sin fase'}
+                          </div>
+                          {!task.completed && (
+                              <button
+                                  className="btn btn-sm btn-success"
+                                  onClick={() => handleMarkComplete(project.id, task.id)}
+                              >
+                                Marcar como completada
+                              </button>
+                          )}
+                        </li>
+                    ))}
+                  </ul>
+                </div>
+            ))}
       </div>
   );
 };
 
-export default ApView;
+export default ProjectsAndTasksView;
