@@ -1,8 +1,8 @@
 import {useEffect, useState} from "react";
-import {FileText, Folder, LogOut, PieChart, Users} from "react-feather";
+import {FileText, Folder, LogOut, PieChart, Users, Book} from "react-feather";
 import '../styles/sidebar.css';
 import logo from '../assets/logo-cds.jpg'
-import {useNavigate} from "react-router";
+import {useNavigate, Link} from "react-router";
 
 const Sidebar = ({ role }) => {
     const [user, setUser] = useState()
@@ -46,16 +46,34 @@ const Sidebar = ({ role }) => {
                     { role === 'MASTER' && (
                         <>
                             <li className="nav-item">
-                                <a href="/customers" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
+                                <Link to="/customers" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
                                     <Users size={20}/>
                                     <span>Empleados</span>
-                                </a>
+                                </Link>
                             </li>
                             <li className="nav-item">
-                                <a href="/home" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
+                                <Link to="/home" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
                                     <Folder size={20}/>
                                     <span>Proyectos</span>
-                                </a>
+                                </Link>
+                            </li>
+                            <li className="nav-item">
+                                <Link to="/fases" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
+                                    <PieChart size={20}/>
+                                    <span>Fases</span>
+                                </Link>
+                            </li>
+                            <li className="nav-item">
+                                <Link to="/tasks" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
+                                    <FileText size={20}/>
+                                    <span>Tareas</span>
+                                </Link>
+                            </li>
+                            <li className="nav-item">
+                                <Link to="/logbook" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
+                                    <Book size={20}/>
+                                    <span>Bitácora</span>
+                                </Link>
                             </li>
                         </>
                     )}

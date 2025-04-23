@@ -1,36 +1,61 @@
 import { handleRequest } from "../../../config/http-client.gateway.js";
 
-// Obtener todos los proyectos
-export const getProjects = async (employeeId, role) => {
-    const payload = {
-        employeeId: employeeId ? Number(employeeId) : null,
-        role: role ? role.toUpperCase() : ''
-    };
-
-    // Log the payload for debugging
-    const response = await handleRequest('post', 'projects/get-all', payload);
-
-    // Return the entire response object so we can check for errors
-    return response;
+export const getLogActivities = async () => {
+    try {
+        const response = await handleRequest("get", "/activities/");
+        return response;
+    } catch (error) {
+        console.error("Error al obtener la bitácora:", error);
+        throw error;
+    }
 };
 
 export const createProject = async (name, identifier, startDate, endDate, employeeId) => {
-    const payload = {
-        name,
-        identifier,
-        startDate,
-        endDate,
-        employeeId: employeeId ? Number(employeeId) : null
-    };
+    try {
+        const response = await handleRequest({
+            endpoint: "/projects/",
+            method: "POST",
+            data: {
+                name,
+                identifier,
+                startDate,
+                endDate,
+                employeeId
+            }
+        });
+        return response;
+    } catch (error) {
+        console.error("Error al crear el proyecto:", error);
+        throw error;
+    }
+};
 
-    // Send the create project request
-    const response = await handleRequest('post', 'projects/', payload);
+export const getProjects = async (employeeId, role) => {
+    try {
+        const endpoint = role === "ADMIN" 
+            ? "/projects/" 
+            : `/projects/employee/${employeeId}`;
 
-    // Return the entire response object so we can check for errors
-    return response;
+        const response = await handleRequest({
+            endpoint,
+            method: "GET",
+        });
+        return response;
+    } catch (error) {
+        console.error("Error al obtener los proyectos:", error);
+        throw error;
+    }
 };
 
 export const getPhases = async () => {
-    const response = await handleRequest('get', '/phases/');
-    return response;
+    try {
+        const response = await handleRequest({
+            endpoint: "/phases/",
+            method: "GET",
+        });
+        return response;
+    } catch (error) {
+        console.error("Error al obtener las fases:", error);
+        throw error;
+    }
 };
