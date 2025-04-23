@@ -40,6 +40,7 @@ AxiosClient.interceptors.request.use(
     },
     (error) => {
         return Promise.reject(error);
+        return Promise.reject(error);
     }
 );
 
@@ -88,7 +89,7 @@ const httpClient = {
     postBlob: (endpoint, payload) => AxiosClient.post(endpoint, payload, { responseType: 'blob' }),
     put: (endpoint, payload) => AxiosClient.put(endpoint, payload),
     patch: (endpoint, payload) => AxiosClient.patch(endpoint, payload),
-    delete: (endpoint) => AxiosClient.delete(endpoint),
+    delete: (endpoint, payload) => AxiosClient.delete(endpoint, { data: payload }),
 };
 
 export const handleRequest = async (method, url, payload) => {
@@ -105,7 +106,7 @@ export const handleRequest = async (method, url, payload) => {
             result: null,
             metadata: null,
             type: 'ERROR',
-            text: error.response?.data?.text || `Error en solicitud ${method}`
+            text: error.text || `Error en solicitud ${method}`
         };
     }
 };

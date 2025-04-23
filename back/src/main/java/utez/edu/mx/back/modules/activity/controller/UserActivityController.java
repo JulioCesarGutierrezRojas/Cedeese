@@ -43,7 +43,6 @@ public class UserActivityController {
      */
     @Operation(summary = "Obtener actividades por nombre de usuario", description = "Recupera todas las actividades realizadas por un usuario específico (Solo administradores)")
     @GetMapping("/user/{username}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<UserActivity>>> getActivitiesByUsername(@PathVariable String username) {
         return new ResponseEntity<>(
                 new ApiResponse<>(service.getActivitiesByUsername(username), TypesResponse.SUCCESS, 
@@ -59,7 +58,6 @@ public class UserActivityController {
      */
     @Operation(summary = "Obtener actividades por método HTTP", description = "Recupera todas las actividades filtradas por tipo de método HTTP (GET, POST, PUT, DELETE) (Solo administradores)")
     @GetMapping("/method/{method}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<UserActivity>>> getActivitiesByMethod(@PathVariable String method) {
         return new ResponseEntity<>(
                 new ApiResponse<>(service.getActivitiesByHttpMethod(method.toUpperCase()), TypesResponse.SUCCESS, 

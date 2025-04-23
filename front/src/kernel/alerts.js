@@ -18,20 +18,16 @@ export function showAlertWithoutCancel(title, message, type = 'success') {
     });
 }
 
-export function showConfirmation(title, message, type = 'warning', confirmButtonText = 'Aceptar', cancelButtonText = 'Cancelar') {
+export function showConfirmation(title, message, type = 'warning', callback, cancelCallback) {
     const appElement = document.getElementById('app');
-    const container = document.querySelector('.container');
-
-    return Swal.fire({
+    Swal.fire({
         title: title,
         text: message,
         icon: type,
         showCancelButton: true,
         showCloseButton: false,
-        confirmButtonText: typeof confirmButtonText === 'function' ? 'Aceptar' : confirmButtonText,
-        cancelButtonText: typeof cancelButtonText === 'function' ? 'Cancelar' : cancelButtonText,
-        target: container || undefined, // esto lo centra dentro del container
-        backdrop: true,
+        confirmButtonText: 'Aceptar',
+        cancelButtonText: 'Cancelar',
         didOpen: () => {
             if (appElement) {
                 appElement.setAttribute('inert', '');
@@ -42,6 +38,12 @@ export function showConfirmation(title, message, type = 'warning', confirmButton
                 appElement.removeAttribute('inert');
             }
         },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            callback();
+        } else {
+            cancelCallback && cancelCallback();
+        }
     });
 }
 

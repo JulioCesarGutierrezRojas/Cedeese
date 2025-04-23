@@ -147,6 +147,12 @@ const Home = () => {
         fetchData();
     }, []);
 
+    const getPhaseName = (phaseId) => {
+        const found = phases.find(p => p.id === phaseId);
+        return found ? found.phase || found.name : 'No especificada';
+    };
+    
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 9;
 
@@ -181,7 +187,10 @@ const Home = () => {
                                                 <div className="card-body">
                                                     <h4 className="card-title">{project.name || project.title}</h4>
                                                     <p className="card-text">{project.identifier || project.identify}</p>
-                                                    <p className="card-text"><strong>Fase:</strong> {project.phase || project.fase || "No especificada"}</p>
+                                                    <p className="card-text">
+                                                        <strong>Fase:</strong> {getPhaseName(project.id || project.phaseId || project.phase)}
+                                                    </p>
+
                                                     <h5 className='fw-bold'>{project.status ? "Activo" : "Inactivo"}</h5>
                                                 </div>
                                             </div>
