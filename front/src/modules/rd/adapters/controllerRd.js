@@ -136,46 +136,17 @@ export const getTasksByProject = async (projectId) => {
 
 export const moveToNextPhase = async (projectId, currentPhaseId) => {
     try {
-        // Imprimimos los datos para cambio de fase
         console.log('[DEBUG] Datos para cambio de fase:', {
             projectId: Number(projectId),
             currentPhaseId: Number(currentPhaseId)
         });
 
-        // Simulamos el cambio de fase de manera local (sin necesidad de backend)
-        const nextPhaseId = Number(currentPhaseId) + 1;
-
-        // Verificamos si la fase ya está en la última (fase 5)
-        if (nextPhaseId > 5) {
-            throw new Error('Ya estás en la última fase del proyecto');
-        }
-
-        // Aquí sería donde actualizamos localmente el ID de la fase en el proyecto (frontend)
-        console.log('[DEBUG] Fase siguiente:', nextPhaseId);
-
-        // Supongamos que tienes un arreglo de fases que contiene la información de las fases
-        const phases = [
-            { id: 1, phase: "INICIO" },
-            { id: 2, phase: "PLANEACIÓN" },
-            { id: 3, phase: "EJECUCIÓN" },
-            { id: 4, phase: "CONTROL" },
-            { id: 5, phase: "CIERRE" }
-        ];
-
-        const newPhase = phases.find(phase => phase.id === nextPhaseId);
-        
-        // Si no se encontró una fase válida, lanzamos error
-        if (!newPhase) {
-            throw new Error('Fase no válida');
-        }
-
-        // Realizamos la llamada al servidor para persistir el cambio (backend)
         const response = await handleRequest(
             'post',
             '/phases/next-phase',
             {
                 projectId: Number(projectId),
-                currentPhaseId: nextPhaseId
+                currentPhaseId: Number(currentPhaseId)
             }
         );
 
@@ -189,7 +160,7 @@ export const moveToNextPhase = async (projectId, currentPhaseId) => {
         if (response.type === 'SUCCESS' || response.success) {
             return {
                 success: true,
-                newPhase: newPhase,  // Fase actualizada
+                newPhase: response.data || response.result,
                 message: response.text || 'Fase cambiada exitosamente'
             };
         } else {
@@ -202,16 +173,18 @@ export const moveToNextPhase = async (projectId, currentPhaseId) => {
             status: error.response?.status,
             timestamp: new Date().toISOString()
         });
-
+        
         let errorMessage = error.message;
         if (error.response?.status === 400) {
             errorMessage = error.response.data?.message || 
                          'Datos inválidos para cambiar de fase';
         }
-
+        
         throw new Error(errorMessage);
     }
 };
+
+
 
 
 export const updateTaskStatus = async (taskId, completed) => {
