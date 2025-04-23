@@ -48,7 +48,6 @@ AxiosClient.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response) {
-        if (error.response) {
             const { status, data } = error.response;
             let errorMessage = Object.values(errorMessages).find(msg => msg.title === data.text);
 
@@ -81,7 +80,6 @@ AxiosClient.interceptors.response.use(
             });
         }
         return Promise.reject(error);
-        return Promise.reject(error);
     }
 );
 
@@ -96,7 +94,6 @@ const httpClient = {
 
 export const handleRequest = async (method, url, payload) => {
     try {
-        const { status, data } = await httpClient[method](url, payload);
         const { status, data } = await httpClient[method](url, payload);
         return {
             result: status === 200 ? data.result : null,
@@ -114,5 +111,4 @@ export const handleRequest = async (method, url, payload) => {
     }
 };
 
-export default httpClient;
 export default httpClient;
