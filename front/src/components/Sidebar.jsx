@@ -85,7 +85,7 @@ const Sidebar = ({ role }) => {
                     { role === 'RD' && (
                         <>
                             <li className="nav-item">
-                                <a href="/" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
+                                <a href="/rd" className="nav-link text-white d-flex align-items-center gap-3 hover-item">
                                     <PieChart size={20}/>
                                     <span>Fases</span>
                                 </a>

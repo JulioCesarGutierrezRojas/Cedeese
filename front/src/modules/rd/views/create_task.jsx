@@ -10,16 +10,9 @@ const TaskForm = () => {
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: "",
-        projectId: ""
+        projectId: "",
+        currentPhase: { id: 1, phase: "INICIO" } // Estado para la fase actual
     });
-
-    const phases = [
-        { id: 1, phase: "INICIO" },
-        { id: 2, phase: "PLANEACIÓN" },
-        { id: 3, phase: "EJECUCIÓN" },
-        { id: 4, phase: "CONTROL" },
-        { id: 5, phase: "CIERRE" }
-    ];
 
     // Cargar proyectos del empleado al montar el componente
     useEffect(() => {
@@ -67,10 +60,21 @@ const TaskForm = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        
+        if (name === "projectId") {
+            // Cuando cambia el proyecto, actualiza la fase actual
+            const selectedProject = projects.find(p => p.id == value);
+            setFormData(prev => ({
+                ...prev,
+                [name]: value,
+                currentPhase: selectedProject?.currentPhase || { id: 1, phase: "INICIO" }
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -92,7 +96,8 @@ const TaskForm = () => {
             // Crear la tarea con manejo de errores mejorado
             const result = await createTask({
                 name: formData.name.trim(),
-                projectId: formData.projectId
+                projectId: formData.projectId,
+                currentPhase: formData.currentPhase // Incluimos la fase actual
             });
     
             if (!result) {
@@ -206,16 +211,20 @@ const TaskForm = () => {
                         )}
                     </div>
 
-                    {/* Información de Fase Automática */}
+                    {/* Información de Fase Actual */}
                     <div className="mb-3 alert alert-info">
                         <div className="d-flex justify-content-between align-items-center">
                             <div>
-                                <label className="form-label mb-0">Fase asignada automáticamente:</label>
+                                <label className="form-label mb-0">Fase actual del proyecto:</label>
                                 <div>
-                                    <strong>{phases.find(p => p.id === 1)?.phase}</strong>
+                                    <strong>{formData.currentPhase.phase}</strong>
                                 </div>
                             </div>
-                            <small className="text-muted">(Todas las nuevas tareas comienzan en fase INICIO)</small>
+                            <small className="text-muted">
+                                {formData.currentPhase.id === 1 
+                                    ? "(Nuevas tareas comienzan en fase INICIO)" 
+                                    : "(La tarea se creará en la fase actual del proyecto)"}
+                            </small>
                         </div>
                     </div>
 

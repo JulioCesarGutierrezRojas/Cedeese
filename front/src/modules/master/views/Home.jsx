@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import { getProjects, createProject } from '../adapters/controllerHome.js';
+import { getProjects, createProject, getPhases } from '../adapters/controllerHome.js';
 import Loader from '../../../components/Loader';
 import ErrorBoundary from '../../../components/ErrorBoundary';
 import { showWarningToast, showSuccessToast } from '../../../kernel/alerts.js';
@@ -9,6 +9,7 @@ import { showWarningToast, showSuccessToast } from '../../../kernel/alerts.js';
 const Home = () => {
     const [showModal, setShowModal] = useState(false);
     const [projects, setProjects] = useState([]);
+    const [phases, setPhases] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
     // Form state
@@ -107,31 +108,43 @@ const Home = () => {
     };
 
     useEffect(() => {
-        const fetchProjects = async () => {
+        const fetchData = async () => {
             setIsLoading(true);
             try {
+                // Fetch projects
                 const employeeId = localStorage.getItem('id');
                 const role = localStorage.getItem('role');
-                const response = await getProjects(employeeId, role);
+                const projectsResponse = await getProjects(employeeId, role);
 
-                // Check if the response has an error
-                if (response.type === 'ERROR') {
-                    throw new Error(response.text || 'Error al cargar proyectos');
+                // Check if the projects response has an error
+                if (projectsResponse.type === 'ERROR') {
+                    throw new Error(projectsResponse.text || 'Error al cargar proyectos');
                 }
 
                 // Set the projects from the response data
-                setProjects(response.data || response.result || []);
+                setProjects(projectsResponse.data || projectsResponse.result || []);
+
+                // Fetch phases
+                const phasesResponse = await getPhases();
+
+                // Check if the phases response has an error
+                if (phasesResponse.type === 'ERROR') {
+                    throw new Error(phasesResponse.text || 'Error al cargar fases');
+                }
+
+                // Set the phases from the response data
+                setPhases(phasesResponse.data || phasesResponse.result || []);
             } catch (error) {
                 showWarningToast({
-                    title: 'Error al cargar proyectos',
-                    text: error?.message || 'Error desconocido al cargar proyectos'
+                    title: 'Error al cargar datos',
+                    text: error?.message || 'Error desconocido al cargar datos'
                 });
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchProjects();
+        fetchData();
     }, []);
 
     const [currentPage, setCurrentPage] = useState(1);
@@ -154,9 +167,7 @@ const Home = () => {
             </ErrorBoundary>
             <div className="container mt-4 d-flex justify-content-between align-items-center">
                 <h1 className="fw-bold">Proyectos</h1>
-                <button className="btn btn-primary" onClick={handleShow}>
-                    Agregar
-                </button>
+                <button className="btn btn-primary" onClick={handleShow}>Agregar</button>
             </div>
             <table className="table table-bordered">
                 <tbody>
@@ -170,6 +181,7 @@ const Home = () => {
                                                 <div className="card-body">
                                                     <h4 className="card-title">{project.name || project.title}</h4>
                                                     <p className="card-text">{project.identifier || project.identify}</p>
+                                                    <p className="card-text"><strong>Fase:</strong> {project.phase || project.fase || "No especificada"}</p>
                                                     <h5 className='fw-bold'>{project.status ? "Activo" : "Inactivo"}</h5>
                                                 </div>
                                             </div>
@@ -276,12 +288,8 @@ const Home = () => {
                                 </form>
                             </div>
                             <div className="modal-footer">
-                                <button type="button" className="btn btn-danger" onClick={handleClose}>
-                                    Cancelar
-                                </button>
-                                <button type="button" className="btn btn-primary" onClick={handleSubmit}>
-                                    Guardar
-                                </button>
+                                <button type="button" className="btn btn-danger" onClick={handleClose}>Cancelar</button>
+                                <button type="button" className="btn btn-primary" onClick={handleSubmit}>Guardar</button>
                             </div>
                         </div>
                     </div>

@@ -23,7 +23,6 @@ export const updateEmployee = async (id, employeeData) => {
         email: employeeData.email
     };
 
-    // Parse rolId - if it's an object, get the id property
     let rolId;
     if (typeof employeeData.rol === 'object' && employeeData.rol !== null) {
         rolId = parseInt(employeeData.rol.id);
@@ -31,8 +30,6 @@ export const updateEmployee = async (id, employeeData) => {
         rolId = parseInt(employeeData.rol);
     }
 
-    // The backend requires rolId, so we need to ensure it's always included
-    // If it's not a valid number, use a default value (1 is often the default role)
     formattedData.rolId = !isNaN(rolId) ? rolId : 1;
 
     const response = await handleRequest('put', '/employees/', formattedData);

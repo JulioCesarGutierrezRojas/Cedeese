@@ -11,6 +11,7 @@ const TaskRd = () => {
     const [loading, setLoading] = useState(true);
     const [currentProject, setCurrentProject] = useState(null);
     const [authChecked, setAuthChecked] = useState(false);
+    
 
     const phases = [
         { id: 1, phase: "INICIO" },
@@ -112,73 +113,123 @@ const TaskRd = () => {
     const allTasksCompleted = tasks.length > 0 && tasks.every(task => task.completed);
 
     const handleNextPhase = async () => {
-        if (!currentProject || !tasks.length) return;
+    if (!currentProject || !tasks.length) return;
 
-        try {
-            setLoading(true);
+    try {
+        setLoading(true);
+        const currentPhaseId = tasks[0]?.phase?.id || tasks[0]?.phaseId;
+        
+        if (!currentPhaseId) {
+            throw new Error('No se pudo determinar la fase actual');
+        }
 
-            // Verificar que todas las tareas estén completadas
-            if (!allTasksCompleted) {
-                throw new Error('Todas las tareas deben estar completadas para avanzar de fase');
+        // 1. Avanzar la fase
+        const phaseResponse = await moveToNextPhase(currentProject.id, currentPhaseId);
+        
+        if (!phaseResponse.success) {
+            throw new Error(phaseResponse.message || 'Error al cambiar de fase');
+        }
+
+        // 2. Obtener la nueva fase de la respuesta
+        const newPhase = phaseResponse.newPhase || phaseResponse.data;
+        const newPhaseId = newPhase?.id || currentPhaseId + 1;
+
+        if (!newPhaseId) {
+            throw new Error('No se recibió la nueva fase del servidor');
+        }
+
+        // 3. Actualización optimista del estado
+        const optimisticallyUpdatedTasks = tasks.map(task => ({
+            ...task,
+            phaseId: newPhaseId,
+            phase: newPhase || {
+                id: newPhaseId,
+                phase: phases.find(p => p.id === newPhaseId)?.phase || 'Nueva Fase'
             }
+        }));
+        setTasks(optimisticallyUpdatedTasks);
 
-            // Obtener la fase actual (asumiendo que todas las tareas están en la misma fase)
-            const currentPhaseId = tasks[0].phase?.id || tasks[0].phaseId;
-
-            if (!currentPhaseId) {
-                throw new Error('No se pudo determinar la fase actual');
-            }
-
-            console.log('[UI] Avanzando fase:', {
-                projectId: currentProject.id,
-                currentPhaseId
-            });
-
-            const response = await moveToNextPhase(currentProject.id, currentPhaseId);
-
-            if (response.success) {
-                swal.fire({
-                    title: "¡Éxito!",
-                    text: response.message || `Proyecto avanzado a fase: ${phases.find(p => p.id === response.newPhase?.id)?.phase ||
-                        response.newPhase?.id ||
-                        'nueva fase'
-                        }`,
-                    icon: "success",
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-
-                // Recargar tareas después del cambio de fase
+        // 4. Verificación en el backend (con reintentos mejorados)
+        let retries = 5; // Aumentar reintentos
+        let backendVerified = false;
+        let lastError = null;
+        
+        while (retries > 0 && !backendVerified) {
+            try {
                 const tasksResponse = await getTasksByProject(currentProject.id);
+                
                 if (tasksResponse.success) {
-                    setTasks(tasksResponse.tasks);
+                    const backendPhaseId = tasksResponse.currentPhase?.id || 
+                                        (tasksResponse.tasks[0]?.phaseId ?? 
+                                         tasksResponse.tasks[0]?.phase?.id);
+                    
+                    if (backendPhaseId === newPhaseId) {
+                        backendVerified = true;
+                        setTasks(tasksResponse.tasks);
+                        break;
+                    } else {
+                        lastError = `Fase del backend (${backendPhaseId}) no coincide con la esperada (${newPhaseId})`;
+                    }
                 }
+                
+                retries--;
+                await new Promise(resolve => setTimeout(resolve, 1500)); // Mayor tiempo de espera
+            } catch (error) {
+                lastError = error.message;
+                console.warn(`[WARN] Intento fallido (${retries} restantes):`, error.message);
+                retries--;
+                await new Promise(resolve => setTimeout(resolve, 1500));
             }
-        } catch (error) {
-            console.error('[UI ERROR] Fallo al cambiar de fase:', {
-                error: error.message,
-                projectId: currentProject?.id,
+        }
+
+        if (!backendVerified) {
+            console.warn('[WARN] El backend no confirmó el cambio después de 5 intentos', {
+                projectId: currentProject.id,
+                expectedPhase: newPhaseId,
+                lastError,
                 time: new Date().toISOString()
             });
-
-            swal.fire({
-                title: "Error",
-                html: `
-                    <div>
-                        <p>${error.message}</p>
-                        ${error.response?.data?.message ? `
-                        <p class="small text-muted mt-2">
-                            ${error.response.data.message}
-                        </p>
-                        ` : ''}
-                    </div>
-                `,
-                icon: "error"
+            // Mantenemos la actualización optimista pero informamos al usuario
+            await swal.fire({
+                title: "Advertencia",
+                html: `El sistema está procesando el cambio de fase.<br>
+                       La fase se actualizó localmente a <strong>${phases.find(p => p.id === newPhaseId)?.phase}</strong>, 
+                       pero la confirmación del servidor está pendiente.`,
+                icon: "warning"
             });
-        } finally {
-            setLoading(false);
+            return;
         }
-    };
+
+        // 5. Mostrar confirmación
+        await swal.fire({
+            title: "¡Fase actualizada!",
+            html: `Proyecto avanzado a: <strong>${
+                newPhase?.phase || 
+                phases.find(p => p.id === newPhaseId)?.phase || 
+                'nueva fase'
+            }</strong>`,
+            icon: "success"
+        });
+
+    } catch (error) {
+        console.error('[UI ERROR] Error al cambiar de fase:', {
+            error: error.message,
+            project: currentProject,
+            time: new Date().toISOString()
+        });
+        
+        // Revertir cambios si falla
+        setTasks(tasks);
+        
+        await swal.fire({
+            title: "Error",
+            text: error.message,
+            icon: "error"
+        });
+    } finally {
+        setLoading(false);
+    }
+};
 
     const deleteTask = async (taskId) => {
         try {
@@ -201,7 +252,7 @@ const TaskRd = () => {
     };
 
     const handleCreateTask = () => {
-        navigate("/taskform");
+        navigate("/create-task");
     };
 
     if (!authChecked || loading) {
@@ -277,7 +328,7 @@ const TaskRd = () => {
                                         <Trash2 size={14} className="me-1" />
                                         Eliminar
                                     </button>
-                                    {!task.completed && (
+                                    {/* {!task.completed && (
                                         <button
                                             className="btn btn-success btn-sm"
                                             onClick={() => completeTask(task.id)}
@@ -285,7 +336,7 @@ const TaskRd = () => {
                                             <Check size={14} className="me-1" />
                                             Completar
                                         </button>
-                                    )}
+                                    )} */}
                                 </div>
                             </div>
                         ))}
