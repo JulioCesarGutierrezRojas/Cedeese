@@ -1,229 +1,149 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../../../components/Sidebar.jsx";
-import { Edit, Trash2, Plus, ChevronRight } from "react-feather";
 import { useNavigate } from "react-router";
-import { getTasksByProject, getProjectsByCurrentEmployee, moveToNextPhase } from "../adapters/controllerRd.js";
+import { createTask, getProjectsByCurrentEmployee } from "../adapters/controllerRd.js";
 import swal from "sweetalert2";
 
-const TaskRd = () => {
+const TaskForm = () => {
     const navigate = useNavigate();
-    const [tasks, setTasks] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [currentProject, setCurrentProject] = useState(null);
-    const [authChecked, setAuthChecked] = useState(false);
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        name: "",
+        projectId: "",
+        currentPhase: { id: 1, phase: "INICIO" } // Estado para la fase actual
+    });
 
-
-    const phases = [
-        { id: 1, phase: "INICIO" },
-        { id: 2, phase: "PLANEACIÓN" },
-        { id: 3, phase: "EJECUCIÓN" },
-        { id: 4, phase: "CONTROL" },
-        { id: 5, phase: "CIERRE" }
-    ];
-
+    // Cargar proyectos del empleado al montar el componente
     useEffect(() => {
-        const checkAuthAndLoad = async () => {
+        const loadProjects = async () => {
+            setLoading(true);
             try {
+                // Obtener ID del usuario desde localStorage
                 const userId = localStorage.getItem('id');
                 const userToken = localStorage.getItem('token');
 
-                console.log('Datos de autenticación:', { userId, userToken });
+                console.log('Verificando autenticación:', { userId, userToken });
 
                 if (!userId || !userToken) {
-                    swal.fire({
-                        title: 'Sesión expirada',
-                        text: 'Por favor inicie sesión nuevamente',
-                        icon: 'warning'
-                    }).then(() => {
-                        navigate('/login');
-                    });
-                    return;
+                    throw new Error('Usuario no autenticado');
                 }
 
-                setAuthChecked(true);
-                await loadTasks(userId);
+                console.log('Obteniendo proyectos para usuario ID:', userId);
+                const result = await getProjectsByCurrentEmployee(userId);
+
+                if (result.success) {
+                    console.log('Proyectos recibidos:', result.projects);
+                    setProjects(result.projects);
+                } else {
+                    throw new Error(result.message || 'Error al obtener proyectos');
+                }
             } catch (error) {
-                console.error("Error al verificar autenticación:", error);
-                swal.fire("Error", "Error al verificar autenticación", "error");
-                navigate('/login');
-            }
-        };
-
-        const loadTasks = async (userId) => {
-            try {
-                setLoading(true);
-
-                // 1. Obtener proyectos del usuario
-                const projectsResponse = await getProjectsByCurrentEmployee(userId);
-
-                if (!projectsResponse.success || !projectsResponse.projects?.length) {
-                    throw new Error('No tienes proyectos asignados');
-                }
-
-                const project = projectsResponse.projects[0];
-                setCurrentProject(project);
-
-                // 2. Obtener tareas del proyecto
-                console.log('[UI] Obteniendo tareas para proyecto:', project.id);
-                const tasksResponse = await getTasksByProject(project.id);
-
-                // Verificación robusta de la respuesta
-                if (!tasksResponse.success) {
-                    throw new Error('No se pudieron cargar las tareas');
-                }
-
-
-                const tasks = Array.isArray(tasksResponse.tasks) ? tasksResponse.tasks : [];
-
-                if (tasks.length === 0) {
-                    console.log('[INFO] No se encontraron tareas para el proyecto');
-                }
-
-                setTasks(tasks);
-
-            } catch (error) {
-                console.error('[UI ERROR] Fallo al cargar tareas:', {
-                    error: error.message,
-                    userId,
-                    time: new Date().toISOString()
-                });
-
+                console.error("Error al cargar proyectos:", error);
                 swal.fire({
-                    title: 'Error',
-                    html: `
-                        <div>
-                            <p>No se pudieron cargar las tareas</p>
-                            <details style="margin-top: 10px; color: #666;">
-                                <summary>Detalles técnicos</summary>
-                                <p>${error.message}</p>
-                                ${error.response ? `<pre>${JSON.stringify(error.response, null, 2)}</pre>` : ''}
-                            </details>
-                        </div>
-                    `,
-                    icon: 'error'
+                    title: "Error",
+                    text: error.message,
+                    icon: "error"
+                }).then(() => {
+                    // Redirigir a login si no está autenticado
+                    if (error.message.includes('autenticado')) {
+                        navigate('/login');
+                    }
                 });
             } finally {
                 setLoading(false);
             }
         };
 
-        checkAuthAndLoad();
+        loadProjects();
     }, [navigate]);
 
-    const allTasksCompleted = tasks.length > 0 && tasks.every(task => task.completed);
+    const handleChange = (e) => {
+        const { name, value } = e.target;
 
-    const handleNextPhase = async () => {
-        if (!currentProject || !tasks.length) return;
+        if (name === "projectId") {
+            // Cuando cambia el proyecto, actualiza la fase actual
+            const selectedProject = projects.find(p => p.id == value);
+            setFormData(prev => ({
+                ...prev,
+                [name]: value,
+                currentPhase: selectedProject?.currentPhase || { id: 1, phase: "INICIO" }
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
 
         try {
-            setLoading(true);
-            const currentPhaseId = tasks[0]?.phase?.id || tasks[0]?.phaseId;
-
-            if (!currentPhaseId) {
-                throw new Error('No se pudo determinar la fase actual');
+            // Validaciones mejoradas
+            if (!formData.name.trim()) {
+                throw new Error("El nombre de la tarea no puede estar vacío");
             }
 
-            // 1. Avanzar la fase
-            const phaseResponse = await moveToNextPhase(currentProject.id, currentPhaseId);
-
-            if (!phaseResponse.success) {
-                throw new Error(phaseResponse.message || 'Error al cambiar de fase');
+            if (!formData.projectId || isNaN(formData.projectId)) {
+                throw new Error("Debes seleccionar un proyecto válido");
             }
 
-            // 2. Obtener la nueva fase de la respuesta
-            const newPhase = phaseResponse.newPhase || phaseResponse.data;
-            const newPhaseId = newPhase?.id || currentPhaseId + 1;
+            console.log('[DEBUG] Enviando datos para crear tarea:', formData);
 
-            if (!newPhaseId) {
-                throw new Error('No se recibió la nueva fase del servidor');
-            }
-
-            // 3. Actualización optimista del estado
-            const optimisticallyUpdatedTasks = tasks.map(task => ({
-                ...task,
-                phaseId: newPhaseId,
-                phase: newPhase || {
-                    id: newPhaseId,
-                    phase: phases.find(p => p.id === newPhaseId)?.phase || 'Nueva Fase'
-                }
-            }));
-            setTasks(optimisticallyUpdatedTasks);
-
-            // 4. Verificación en el backend (con reintentos mejorados)
-            let retries = 5; // Aumentar reintentos
-            let backendVerified = false;
-            let lastError = null;
-
-            while (retries > 0 && !backendVerified) {
-                try {
-                    const tasksResponse = await getTasksByProject(currentProject.id);
-
-                    if (tasksResponse.success) {
-                        const backendPhaseId = tasksResponse.currentPhase?.id ||
-                            (tasksResponse.tasks[0]?.phaseId ??
-                                tasksResponse.tasks[0]?.phase?.id);
-
-                        if (backendPhaseId === newPhaseId) {
-                            backendVerified = true;
-                            setTasks(tasksResponse.tasks);
-                            break;
-                        } else {
-                            lastError = `Fase del backend (${backendPhaseId}) no coincide con la esperada (${newPhaseId})`;
-                        }
-                    }
-
-                    retries--;
-                    await new Promise(resolve => setTimeout(resolve, 1500)); // Mayor tiempo de espera
-                } catch (error) {
-                    lastError = error.message;
-                    console.warn(`[WARN] Intento fallido (${retries} restantes):`, error.message);
-                    retries--;
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                }
-            }
-
-            if (!backendVerified) {
-                console.warn('[WARN] El backend no confirmó el cambio después de 5 intentos', {
-                    projectId: currentProject.id,
-                    expectedPhase: newPhaseId,
-                    lastError,
-                    time: new Date().toISOString()
-                });
-                // Mantenemos la actualización optimista pero informamos al usuario
-                await swal.fire({
-                    title: "",
-                    html: `<br>
-                       La fase se actualizó a <strong>${phases.find(p => p.id === newPhaseId)?.phase}</strong>, 
-                      `,
-                    icon: "Succes"
-                });
-                return;
-            }
-
-            // 5. Mostrar confirmación
-            await swal.fire({
-                title: "¡Fase actualizada!",
-                html: `Proyecto avanzado a: <strong>${
-                    newPhase?.phase ||
-                    phases.find(p => p.id === newPhaseId)?.phase ||
-                    'nueva fase'
-                }</strong>`,
-                icon: "success"
+            // Crear la tarea con manejo de errores mejorado
+            const result = await createTask({
+                name: formData.name.trim(),
+                projectId: formData.projectId,
+                currentPhase: formData.currentPhase // Incluimos la fase actual
             });
 
+            if (!result) {
+                throw new Error("No se recibió respuesta del servidor");
+            }
+
+            if (result.success) {
+                swal.fire({
+                    title: "Éxito",
+                    text: "Tarea creada correctamente",
+                    icon: "success",
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    navigate("/rd");
+                });
+            } else {
+                throw new Error(result.error || "Error al crear la tarea");
+            }
         } catch (error) {
-            console.error('[UI ERROR] Error al cambiar de fase:', {
-                error: error.message,
-                project: currentProject,
+            console.error("Error detallado al crear tarea:", {
+                error: error,
+                formData: formData,
                 time: new Date().toISOString()
             });
 
-            // Revertir cambios si falla
-            setTasks(tasks);
+            let errorMessage = error.message;
 
-            await swal.fire({
+            // Manejo específico de errores conocidos
+            if (error.message.includes('projectId')) {
+                errorMessage = "El proyecto seleccionado no es válido";
+            } else if (error.message.includes('name')) {
+                errorMessage = "El nombre de la tarea es requerido";
+            }
+
+            swal.fire({
                 title: "Error",
-                text: error.message,
+                html: `
+                    <div>
+                        <p>${errorMessage}</p>
+                        <details style="margin-top: 10px; color: #666; font-size: 0.8em;">
+                            <summary>Detalles técnicos</summary>
+                            <p>${error.message}</p>
+                        </details>
+                    </div>
+                `,
                 icon: "error"
             });
         } finally {
@@ -231,120 +151,110 @@ const TaskRd = () => {
         }
     };
 
-    const deleteTask = async (taskId) => {
-        try {
-            setTasks(tasks.filter(task => task.id !== taskId));
-            swal.fire("Éxito", "Tarea eliminada correctamente", "success");
-        } catch (error) {
-            swal.fire("Error", error.message, "error");
-        }
-    };
-
-    /*const completeTask = async (taskId) => {
-        try {
-            setTasks(tasks.map(task =>
-                task.id === taskId ? { ...task, completed: true } : task
-            ));
-            swal.fire("Éxito", "Tarea marcada como completada", "success");
-        } catch (error) {
-            swal.fire("Error", error.message, "error");
-        }
-    };*/
-
-    const handleCreateTask = () => {
-        navigate("/create-task");
-    };
-
-    if (!authChecked || loading) {
-        return (
-            <div className="d-flex">
-                <Sidebar role="RD" />
-                <div className="container mt-4 text-center">
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Cargando...</span>
-                    </div>
-                    <p>{authChecked ? 'Cargando tareas...' : 'Verificando autenticación...'}</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="d-flex">
             <Sidebar role="RD" />
-            <div className="container mt-4 mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h2>Tareas asignadas</h2>
-                    <div className="d-flex gap-2">
-                        {allTasksCompleted && (
-                            <button
-                                className="btn btn-primary"
-                                onClick={handleNextPhase}
-                                disabled={loading}
-                            >
-                                <ChevronRight size={16} className="me-2" />
-                                Pasar de fase
-                            </button>
-                        )}
-                        <button
-                            className="btn btn-success"
-                            onClick={handleCreateTask}
-                            disabled={loading}
-                        >
-                            <Plus size={16} className="me-2" />
-                            Crear tarea
-                        </button>
-                    </div>
-                </div>
+            <div className="container mt-4">
+                <h2 className="mb-4">Crear nueva tarea</h2>
 
-                {tasks.length === 0 ? (
-                    <div className="alert alert-info">
-                        No hay tareas asignadas actualmente
+                <form onSubmit={handleSubmit} className="card p-4 shadow-sm">
+                    {/* Campo Nombre de la Tarea */}
+                    <div className="mb-3">
+                        <label htmlFor="name" className="form-label">
+                            Nombre de la tarea *
+                        </label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            id="name"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            required
+                            disabled={loading}
+                            placeholder="Ingrese el nombre de la tarea"
+                        />
                     </div>
-                ) : (
-                    <div className="d-flex flex-column gap-3">
-                        {tasks.map(task => (
-                            <div key={task.id} className={`card p-3 shadow-sm ${task.completed ? 'bg-light' : ''}`}>
-                                <h5 className="mb-1">{task.name}</h5>
-                                <p className="mb-1"><strong>Proyecto:</strong> {task.project?.name || 'N/A'}</p>
-                                <p className="mb-1"><strong>Fase:</strong> {
-                                    phases.find(p => p.id === (task.phaseId ?? task.phase?.id))?.phase || 'N/A'
-                                }</p>
-                                <p className="mb-3">
-                                    <strong>Estado:</strong>
-                                    <span className={`badge ${task.completed ? 'bg-success' : 'bg-warning'} ms-2`}>
-                                        {task.completed ? 'Completada' : 'Pendiente'}
-                                    </span>
-                                </p>
-                                <div className="d-flex gap-2">
-                                    <button className="btn btn-primary btn-sm">
-                                        <Edit size={14} className="me-1" />
-                                        Editar
-                                    </button>
-                                    <button
-                                        className="btn btn-danger btn-sm"
-                                        onClick={() => deleteTask(task.id)}
-                                    >
-                                        <Trash2 size={14} className="me-1" />
-                                        Eliminar
-                                    </button>
-                                    {/* {!task.completed && (
-                                        <button
-                                            className="btn btn-success btn-sm"
-                                            onClick={() => completeTask(task.id)}
-                                        >
-                                            <Check size={14} className="me-1" />
-                                            Completar
-                                        </button>
-                                    )} */}
+
+                    {/* Selector de Proyecto */}
+                    <div className="mb-3">
+                        <label htmlFor="projectId" className="form-label">
+                            Proyecto *
+                        </label>
+                        <select
+                            className={`form-select ${!formData.projectId ? "text-muted" : ""}`}
+                            id="projectId"
+                            name="projectId"
+                            value={formData.projectId}
+                            onChange={handleChange}
+                            required
+                            disabled={loading || projects.length === 0}
+                        >
+                            <option value="">{projects.length === 0 ? "No hay proyectos disponibles" : "Seleccione un proyecto"}</option>
+                            {projects.map(project => (
+                                <option key={project.id} value={project.id}>
+                                    {project.name} {project.identifier ? `(${project.identifier})` : ''}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* Mensajes de estado */}
+                        {loading && projects.length === 0 && (
+                            <div className="mt-2 text-info">
+                                <small>Cargando proyectos...</small>
+                            </div>
+                        )}
+                        {!loading && projects.length === 0 && (
+                            <div className="mt-2 text-warning">
+                                <small>No tienes proyectos asignados</small>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Información de Fase Actual */}
+                    <div className="mb-3 alert alert-info">
+                        <div className="d-flex justify-content-between align-items-center">
+                            <div>
+                                <label className="form-label mb-0">Fase actual del proyecto:</label>
+                                <div>
+                                    <strong>{formData.currentPhase.phase}</strong>
                                 </div>
                             </div>
-                        ))}
+                            <small className="text-muted">
+                                {formData.currentPhase.id === 1
+                                    ? "(Nuevas tareas comienzan en fase INICIO)"
+                                    : "(La tarea se creará en la fase actual del proyecto)"}
+                            </small>
+                        </div>
                     </div>
-                )}
+
+                    {/* Botón de Envío */}
+                    <div className="d-flex justify-content-end">
+                        <button
+                            type="button"
+                            className="btn btn-outline-secondary me-2"
+                            onClick={() => navigate("/rd")}
+                            disabled={loading}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            className="btn btn-success"
+                            disabled={loading || projects.length === 0}
+                        >
+                            {loading ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    Creando...
+                                </>
+                            ) : "Guardar tarea"}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );
 };
 
-export default TaskRd;
+export default TaskForm;

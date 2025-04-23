@@ -7,7 +7,7 @@ export const createTask = async (taskData) => {
         console.log('[DEBUG] Datos para crear tarea:', {
             name: taskData.name,
             projectId: Number(taskData.projectId),
-            phaseId: Number(taskData.phaseId),
+            phaseId: Number(taskData.currentPhase?.id || 1),
             completed: false
         });
 
@@ -17,7 +17,7 @@ export const createTask = async (taskData) => {
             {
                 name: taskData.name,
                 projectId: Number(taskData.projectId),
-                phaseId: Number(taskData.phaseId),
+                phaseId: Number(taskData.currentPhase?.id || 1),
                 completed: false
             }
         );
@@ -63,6 +63,7 @@ export const createTask = async (taskData) => {
     }
 
 };
+
 export const getProjectsByCurrentEmployee = async (employeeId) => {
     try {
         console.log('[DEBUG] Obteniendo proyectos para empleado:', employeeId);
@@ -95,6 +96,7 @@ export const getProjectsByCurrentEmployee = async (employeeId) => {
     }
 
 };
+
 export const getTasksByProject = async (projectId) => {
     try {
         console.log('[DEBUG] Solicitando tareas para projectId:', projectId);
@@ -135,6 +137,7 @@ export const getTasksByProject = async (projectId) => {
     }
 
 };
+
 export const moveToNextPhase = async (projectId, currentPhaseId) => {
     try {
         console.log('[DEBUG] Datos para cambio de fase:', {
@@ -185,6 +188,56 @@ export const moveToNextPhase = async (projectId, currentPhaseId) => {
     }
 
 };
-export const updateTaskStatus = async (taskId, completed) => {
-    return handleRequest('patch', /tasks/ `${taskId}`, { completed } );
+
+
+
+export const deleteTask = async (taskId) => {
+    try {
+        console.log('[DEBUG] Eliminando tarea con ID:', taskId);
+
+        const response = await handleRequest(
+            'delete',
+            '/tasks/',
+            { id: taskId }
+        );
+
+        console.log('[DEBUG] Respuesta del servidor:', response);
+
+        if (!response) {
+            throw new Error('El servidor no respondió');
+        }
+
+        // Manejo de diferentes formatos de respuesta
+        if (response.success || response.type === 'SUCCESS') {
+            return {
+                success: true,
+                message: response.message || 'Tarea eliminada correctamente'
+            };
+        } else {
+            const errorMessage = response.message || response.text || 'Error al eliminar la tarea';
+            throw new Error(errorMessage);
+        }
+    } catch (error) {
+        console.error('Error en deleteTask:', {
+            message: error.message,
+            response: error.response,
+            stack: error.stack
+        });
+
+        const errorMsg = error.response?.data?.message ||
+            error.response?.text ||
+            error.message ||
+            'No se pudo eliminar la tarea';
+
+        swal.fire({
+            title: 'Error',
+            text: errorMsg,
+            icon: 'error'
+        });
+
+        return {
+            success: false,
+            error: errorMsg
+        };
+    }
 };
