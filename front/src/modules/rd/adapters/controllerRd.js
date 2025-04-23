@@ -1,99 +1,190 @@
 import { handleRequest } from '../../../config/http-client.gateway.js';
 import swal from 'sweetalert2';
 
+
 export const createTask = async (taskData) => {
     try {
+        console.log('[DEBUG] Datos para crear tarea:', {
+            name: taskData.name,
+            projectId: Number(taskData.projectId),
+            phaseId: Number(taskData.phaseId),
+            completed: false
+        });
+
         const response = await handleRequest(
             'post',
-            '/api/tasks',
+            '/tasks/',
             {
                 name: taskData.name,
-                project_id: taskData.project_id,
-                phase_id: taskData.phase_id // 1 por defecto
-                // completed no se envía (se asume false en backend)
+                projectId: Number(taskData.projectId),
+                phaseId: Number(taskData.phaseId),
+                completed: false
             }
         );
 
-        if (response.type === 'SUCCESS') {
-            return { success: true, task: response.result };
+        console.log('[DEBUG] Respuesta del servidor:', response);
+
+        if (!response) {
+            throw new Error('El servidor no respondió');
+        }
+
+        // Adaptación para diferentes formatos de respuesta
+        if (response.success || response.type === 'SUCCESS') {
+            return {
+                success: true,
+                task: response.data || response.result
+            };
         } else {
-            swal.fire({
-                title: 'Error',
-                text: response.text || 'Error al crear la tarea',
-                icon: 'error'
-            });
-            return { success: false, error: response.text };
+            const errorMessage = response.message || response.text || 'Error al crear la tarea';
+            throw new Error(errorMessage);
         }
     } catch (error) {
-        console.error('Error en createTask:', error);
-        swal.fire({
-            title: 'Error inesperado',
-            text: 'No se pudo conectar al servidor',
-            icon: 'error'
+        console.error('Error en createTask:', {
+            message: error.message,
+            response: error.response,
+            stack: error.stack
         });
-        return { success: false, error: 'Error interno del servidor' };
-    }
-};
 
-export const getProjects = async () => {
-    try {
-        const response = await handleRequest('get', '/projects');
-        return {
-            success: response.type === 'SUCCESS',
-            projects: response.result || []
-        };
-    } catch (error) {
-        console.error('Error al obtener proyectos:', error);
-        return { success: false, projects: [] };
-    }
-};
+        const errorMsg = error.response?.data?.message ||
+            error.response?.text ||
+            error.message ||
+            'No se pudo crear la tarea';
 
-export const getTasks = async () => {
-    try {
-        const response = await handleRequest('get', '/api/tasks');
-        return {
-            success: response.type === 'SUCCESS',
-            tasks: response.result || response.data || []
-        };
-    } catch (error) {
-        console.error('Error al obtener tareas:', error);
         swal.fire({
             title: 'Error',
-            text: 'No se pudieron cargar las tareas',
+            text: errorMsg,
             icon: 'error'
         });
-        return { success: false, tasks: [] };
-    }
-};
 
-export const deleteTask = async (taskId) => {
-    try {
-        const response = await handleRequest('delete', `/api/tasks/${taskId}`);
         return {
-            success: response.type === 'SUCCESS',
-            message: response.text || 'Tarea eliminada correctamente'
+            success: false,
+            error: errorMsg
         };
-    } catch (error) {
-        console.error('Error al eliminar tarea:', error);
-        swal.fire({
-            title: 'Error',
-            text: 'No se pudo eliminar la tarea',
-            icon: 'error'
-        });
-        return { success: false, error: 'Error al eliminar la tarea' };
     }
-};
 
-// Opcional: Otros métodos relacionados con tareas
+};
+export const getProjectsByCurrentEmployee = async (employeeId) => {
+    try {
+        console.log('[DEBUG] Obteniendo proyectos para empleado:', employeeId);
+
+        if (!employeeId) {
+            throw new Error('ID de empleado no proporcionado');
+        }
+
+        const response = await handleRequest(
+            'post',
+            '/projects/get-by-employee',
+            { employeeId }
+        );
+
+        if (!response) {
+            throw new Error('El servidor no respondió');
+        }
+
+        if (response.type === 'SUCCESS') {
+            return {
+                success: true,
+                projects: Array.isArray(response.result) ? response.result : [response.result]
+            };
+        } else {
+            throw new Error(response.text || 'Error al obtener proyectos');
+        }
+    } catch (error) {
+        console.error('Error en getProjectsByCurrentEmployee:', error);
+        throw error;
+    }
+
+};
+export const getTasksByProject = async (projectId) => {
+    try {
+        console.log('[DEBUG] Solicitando tareas para projectId:', projectId);
+
+        const response = await handleRequest(
+            'post',
+            '/tasks/project-tasks',
+            { projectId }
+        );
+
+        console.log('[DEBUG] Respuesta completa:', response);
+
+        // Verificación mejorada de la respuesta
+        if (!response) {
+            throw new Error('No se recibió respuesta del servidor');
+        }
+
+
+        if (response.type === 'SUCCESS') {
+            // Priorizar response.result si existe, luego response.data
+            const tasks = response.result || response.data || [];
+
+            return {
+                success: true,
+                tasks: Array.isArray(tasks) ? tasks : [tasks]
+            };
+        } else {
+            throw new Error(response.text || 'El servidor reportó un error');
+        }
+    } catch (error) {
+        console.error('[ERROR] Detalles del error:', {
+            message: error.message,
+            response: error.response,
+            timestamp: new Date().toISOString()
+        });
+
+        throw new Error(error.message || 'Error al obtener las tareas');
+    }
+
+};
+export const moveToNextPhase = async (projectId, currentPhaseId) => {
+    try {
+        console.log('[DEBUG] Datos para cambio de fase:', {
+            projectId: Number(projectId),
+            currentPhaseId: Number(currentPhaseId)
+        });
+
+        const response = await handleRequest(
+            'post',
+            '/phases/next-phase',
+            {
+                projectId: Number(projectId),
+                currentPhaseId: Number(currentPhaseId)
+            }
+        );
+
+        console.log('[DEBUG] Respuesta del servidor:', response);
+
+        if (!response) {
+            throw new Error('El servidor no respondió');
+        }
+
+        // Manejo de diferentes formatos de respuesta
+        if (response.type === 'SUCCESS' || response.success) {
+            return {
+                success: true,
+                newPhase: response.data || response.result,
+                message: response.text || 'Fase cambiada exitosamente'
+            };
+        } else {
+            throw new Error(response.text || response.message || 'Error al cambiar de fase');
+        }
+    } catch (error) {
+        console.error('[ERROR] Detalles del fallo:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            timestamp: new Date().toISOString()
+        });
+
+        let errorMessage = error.message;
+        if (error.response?.status === 400) {
+            errorMessage = error.response.data?.message ||
+                'Datos inválidos para cambiar de fase';
+        }
+
+        throw new Error(errorMessage);
+    }
+
+};
 export const updateTaskStatus = async (taskId, completed) => {
-    try {
-        const response = await handleRequest('patch', `/api/tasks/${taskId}`, { completed });
-        return {
-            success: response.type === 'SUCCESS',
-            message: response.text || 'Estado de tarea actualizado correctamente'
-        };
-    } catch (error) {
-        console.error('Error al actualizar estado de tarea:', error);
-        return { success: false, error: 'Error al actualizar estado de tarea' };
-    }
+    return handleRequest('patch', /tasks/ `${taskId}`, { completed } );
 };

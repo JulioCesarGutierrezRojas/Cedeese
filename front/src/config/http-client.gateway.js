@@ -40,7 +40,7 @@ AxiosClient.interceptors.request.use(
     },
     (error) => {
         return Promise.reject(error);
-        return Promise.reject(error);
+
     }
 );
 
@@ -107,6 +107,7 @@ export const handleRequest = async (method, url, payload) => {
             metadata: null,
             type: 'ERROR',
             text: error.text || `Error en solicitud ${method}`
+
         };
     }
 };
