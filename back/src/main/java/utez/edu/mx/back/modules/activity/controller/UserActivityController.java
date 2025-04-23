@@ -29,7 +29,6 @@ public class UserActivityController {
      */
     @Operation(summary = "Obtener todas las actividades", description = "Recupera una lista de todas las actividades de usuario en el sistema (Solo administradores)")
     @GetMapping("/")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<UserActivity>>> getAllActivities() {
         return new ResponseEntity<>(
                 new ApiResponse<>(service.getAllActivities(), TypesResponse.SUCCESS, "Activities retrieved successfully"),
